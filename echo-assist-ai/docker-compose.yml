@@ -1,0 +1,31 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: echo-assist-backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Uncomment when moving from SQLite to PostgreSQL for production.
+  # db:
+  #   image: postgres:16-alpine
+  #   container_name: echo-assist-db
+  #   restart: unless-stopped
+  #   environment:
+  #     POSTGRES_USER: echo_assist
+  #     POSTGRES_PASSWORD: change-me
+  #     POSTGRES_DB: echo_assist
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - echo_assist_db_data:/var/lib/postgresql/data
+
+# volumes:
+#   echo_assist_db_data:

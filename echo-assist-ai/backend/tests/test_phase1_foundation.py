@@ -1,0 +1,110 @@
+"""
+Phase 1 smoke tests: app boots, DB initializes, auth + core routes work.
+More targeted tests (sensor fusion, risk engine, etc.) land in later phases
+per the master prompt's development order.
+"""
+
+import os
+
+import pytest
+from fastapi.testclient import TestClient
+
+from app.core.config import settings
+from app.database import engine
+from app.main import app
+
+
+@pytest.fixture()
+def client():
+    # settings/engine are cached singletons configured at import time, so we
+    # reset the actual SQLite file between tests for isolation rather than
+    # trying to override DATABASE_URL per test.
+    db_path = settings.DATABASE_URL.replace("sqlite:///", "")
+    engine.dispose()
+    if os.path.exists(db_path):
+        os.remove(db_path)
+
+    with TestClient(app) as c:
+        yield c
+
+    engine.dispose()
+    if os.path.exists(db_path):
+        os.remove(db_path)
+
+
+def test_health_check(client):
+    response = client.get("/health")
+    assert response.status_code == 200
+    assert response.json()["status"] == "ok"
+
+
+def test_register_and_login(client):
+    register_payload = {
+        "full_name": "Test User",
+        "email": "test@example.com",
+        "password": "testpass123",
+    }
+    r = client.post("/auth/register", json=register_payload)
+    assert r.status_code == 201
+    assert "access_token" in r.json()
+
+    r = client.post(
+        "/auth/login",
+        json={"email": register_payload["email"], "password": register_payload["password"]},
+    )
+    assert r.status_code == 200
+    assert "access_token" in r.json()
+
+
+def test_register_duplicate_email_rejected(client):
+    payload = {"full_name": "A", "email": "dup@example.com", "password": "testpass123"}
+    r1 = client.post("/auth/register", json=payload)
+    assert r1.status_code == 201
+    r2 = client.post("/auth/register", json=payload)
+    assert r2.status_code == 409
+
+
+def test_protected_route_requires_token(client):
+    r = client.get("/user/profile")
+    assert r.status_code == 401
+
+
+def test_sensor_data_ingestion_and_latest(client):
+    register = client.post(
+        "/auth/register",
+        json={"full_name": "Sensor User", "email": "sensor@example.com", "password": "testpass123"},
+    )
+    token = register.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    packet = {
+        "device_id": "ECHO_CANE_TEST",
+        "ultrasonic_cm": 115,
+        "tof_mm": 1200,
+        "sos_pressed": False,
+        "battery_percent": 90,
+        "timestamp": 1710000000,
+    }
+    r = client.post("/sensors/data", json=packet, headers=headers)
+    assert r.status_code == 201
+
+    r = client.get("/sensors/latest", headers=headers)
+    assert r.status_code == 200
+    assert r.json()["ultrasonic_cm"] == 115
+
+
+def test_ai_risk_danger_classification(client):
+    register = client.post(
+        "/auth/register",
+        json={"full_name": "Risk User", "email": "risk@example.com", "password": "testpass123"},
+    )
+    token = register.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    r = client.post(
+        "/ai/risk",
+        json={"object_name": "pole", "fused_distance_m": 0.5, "direction": "center"},
+        headers=headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["risk_level"] == "DANGER"

@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ECHO-ASSIST AI — AI for Inclusive Mobility</title>
+  <meta name="description" content="ECHO-ASSIST AI is an AI-powered smart mobility assistant for visually impaired users, featuring real-time obstacle detection, emergency SOS, navigation, and ESP32 smart cane integration." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <!-- ─── NAV ─── -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-inner">
+      <a href="#" class="nav-logo" aria-label="ECHO-ASSIST AI Home">
+        <span class="logo-icon" aria-hidden="true">◉</span>
+        <span class="logo-text">ECHO<span class="logo-accent">-ASSIST</span> AI</span>
+      </a>
+      <ul class="nav-links" role="list">
+        <li><a href="#features" class="nav-link">Features</a></li>
+        <li><a href="#api-status" class="nav-link">API Status</a></li>
+        <li><a href="#api-explorer" class="nav-link">Explorer</a></li>
+        <li><a href="#architecture" class="nav-link">Architecture</a></li>
+      </ul>
+      <a href="http://localhost:8000/docs" target="_blank" rel="noopener" class="btn btn-sm btn-outline" id="docs-btn">API Docs ↗</a>
+    </div>
+  </nav>
+
+  <!-- ─── HERO ─── -->
+  <header class="hero" id="home">
+    <div class="hero-bg" aria-hidden="true">
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+      <div class="orb orb-3"></div>
+      <canvas class="grid-canvas" id="gridCanvas"></canvas>
+    </div>
+    <div class="hero-content">
+      <div class="badge-row">
+        <span class="badge badge-online" id="heroBadge">
+          <span class="dot"></span>
+          Checking API…
+        </span>
+        <span class="badge badge-gray">Phase 1</span>
+        <span class="badge badge-gray">AI Mock Mode</span>
+      </div>
+      <h1 class="hero-title">
+        <span class="title-line">AI-Powered</span>
+        <span class="title-line gradient-text">Inclusive Mobility</span>
+      </h1>
+      <p class="hero-sub">
+        ECHO-ASSIST AI combines computer vision, sensor fusion, and voice interaction to give visually-impaired users real-time obstacle detection, navigation, and emergency SOS — powered by an ESP32 smart cane.
+      </p>
+      <div class="hero-actions">
+        <a href="#api-explorer" class="btn btn-primary" id="explore-btn">
+          <span>Explore API</span>
+          <span aria-hidden="true">→</span>
+        </a>
+        <a href="http://localhost:8000/docs" target="_blank" rel="noopener" class="btn btn-ghost">
+          Swagger Docs ↗
+        </a>
+      </div>
+      <div class="hero-stats" role="list" aria-label="System statistics">
+        <div class="stat" role="listitem">
+          <span class="stat-num" id="statEndpoints">8</span>
+          <span class="stat-label">API Routes</span>
+        </div>
+        <div class="stat-divider" aria-hidden="true"></div>
+        <div class="stat" role="listitem">
+          <span class="stat-num">5</span>
+          <span class="stat-label">AI Features</span>
+        </div>
+        <div class="stat-divider" aria-hidden="true"></div>
+        <div class="stat" role="listitem">
+          <span class="stat-num">ESP32</span>
+          <span class="stat-label">Smart Cane</span>
+        </div>
+        <div class="stat-divider" aria-hidden="true"></div>
+        <div class="stat" role="listitem">
+          <span class="stat-num" id="statUptime">--</span>
+          <span class="stat-label">Status</span>
+        </div>
+      </div>
+    </div>
+    <div class="hero-visual" aria-hidden="true">
+      <div class="phone-mockup">
+        <div class="phone-screen">
+          <div class="phone-header">
+            <span class="ph-icon">◉</span>
+            <span class="ph-title">ECHO-ASSIST AI</span>
+          </div>
+          <div class="phone-status-bar">
+            <div class="ph-status active" title="Cane connected">
+              <span class="ph-dot"></span>Cane
+            </div>
+            <div class="ph-status active" title="GPS active">
+              <span class="ph-dot"></span>GPS
+            </div>
+            <div class="ph-status warning" title="Camera initializing">
+              <span class="ph-dot"></span>Camera
+            </div>
+            <div class="ph-status ph-battery">
+              🔋 82%
+            </div>
+          </div>
+          <div class="phone-buttons">
+            <button class="ph-btn ph-btn-primary phone-btn-anim" id="phoneBtnAssist">
+              <span class="ph-btn-icon">👁</span> Start Assistance
+            </button>
+            <button class="ph-btn ph-btn-default phone-btn-anim" style="animation-delay:.1s">
+              <span class="ph-btn-icon">🧭</span> Navigate
+            </button>
+            <button class="ph-btn ph-btn-default phone-btn-anim" style="animation-delay:.2s">
+              <span class="ph-btn-icon">🎙</span> Describe Scene
+            </button>
+            <button class="ph-btn ph-btn-danger phone-btn-anim" style="animation-delay:.3s">
+              <span class="ph-btn-icon">🆘</span> Emergency SOS
+            </button>
+            <button class="ph-btn ph-btn-default phone-btn-anim" style="animation-delay:.4s">
+              <span class="ph-btn-icon">📡</span> Smart Cane
+            </button>
+          </div>
+          <div class="phone-alert" id="phoneAlert" aria-live="polite">
+            <span class="alert-icon">⚠️</span>
+            <span id="phoneAlertText">Obstacle detected: 1.2m ahead</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ─── API STATUS ─── -->
+    <section class="section" id="api-status">
+      <div class="container">
+        <div class="section-header">
+          <div class="section-eyebrow">Live Backend</div>
+          <h2 class="section-title">API Status</h2>
+          <p class="section-desc">Real-time health check from your running FastAPI backend at <code>localhost:8000</code></p>
+        </div>
+        <div class="status-grid">
+          <div class="status-card" id="statusMain">
+            <div class="status-card-header">
+              <span class="status-icon">🔌</span>
+              <span class="status-card-title">Backend Server</span>
+              <span class="status-chip" id="chipMain">Checking…</span>
+            </div>
+            <div class="status-data" id="dataMain">
+              <div class="data-row"><span class="data-key">URL</span><code class="data-val">http://localhost:8000</code></div>
+              <div class="data-row"><span class="data-key">App</span><code class="data-val" id="dataAppName">--</code></div>
+              <div class="data-row"><span class="data-key">Tagline</span><code class="data-val" id="dataTagline">--</code></div>
+              <div class="data-row"><span class="data-key">Docs</span><code class="data-val"><a href="http://localhost:8000/docs" target="_blank">/docs ↗</a></code></div>
+            </div>
+          </div>
+          <div class="status-card" id="statusHealth">
+            <div class="status-card-header">
+              <span class="status-icon">❤️</span>
+              <span class="status-card-title">Health Check</span>
+              <span class="status-chip" id="chipHealth">Checking…</span>
+            </div>
+            <div class="status-data" id="dataHealth">
+              <div class="data-row"><span class="data-key">Endpoint</span><code class="data-val">/health</code></div>
+              <div class="data-row"><span class="data-key">Status</span><code class="data-val" id="dataStatus">--</code></div>
+              <div class="data-row"><span class="data-key">Environment</span><code class="data-val" id="dataEnv">--</code></div>
+              <div class="data-row"><span class="data-key">AI Mock</span><code class="data-val" id="dataAiMock">--</code></div>
+            </div>
+          </div>
+          <div class="status-card status-card-wide">
+            <div class="status-card-header">
+              <span class="status-icon">🛣️</span>
+              <span class="status-card-title">Available Endpoints</span>
+              <button class="btn btn-xs btn-outline" id="refreshBtn" onclick="checkAllStatus()">↻ Refresh</button>
+            </div>
+            <div class="endpoints-list" role="list">
+              <div class="ep-item" role="listitem"><span class="ep-method get">GET</span><code>/</code><span class="ep-desc">Root info</span></div>
+              <div class="ep-item" role="listitem"><span class="ep-method get">GET</span><code>/health</code><span class="ep-desc">Health check</span></div>
+              <div class="ep-item" role="listitem"><span class="ep-method post">POST</span><code>/auth/register</code><span class="ep-desc">User registration</span></div>
+              <div class="ep-item" role="listitem"><span class="ep-method post">POST</span><code>/auth/token</code><span class="ep-desc">JWT login</span></div>
+              <div class="ep-item" role="listitem"><span class="ep-method post">POST</span><code>/ai/detect</code><span class="ep-desc">Object detection</span></div>
+              <div class="ep-item" role="listitem"><span class="ep-method post">POST</span><code>/ai/risk</code><span class="ep-desc">Risk classification</span></div>
+              <div class="ep-item" role="listitem"><span class="ep-method post">POST</span><code>/ai/scene-description</code><span class="ep-desc">Scene narration</span></div>
+              <div class="ep-item" role="listitem"><span class="ep-method post">POST</span><code>/sensors/data</code><span class="ep-desc">Ingest ESP32 data</span></div>
+              <div class="ep-item" role="listitem"><span class="ep-method get">GET</span><code>/sensors/latest</code><span class="ep-desc">Latest reading</span></div>
+              <div class="ep-item" role="listitem"><span class="ep-method post">POST</span><code>/emergency/trigger</code><span class="ep-desc">Trigger SOS</span></div>
+              <div class="ep-item" role="listitem"><span class="ep-method post">POST</span><code>/navigation/route</code><span class="ep-desc">Get route</span></div>
+              <div class="ep-item" role="listitem"><span class="ep-method get">GET</span><code>/contacts</code><span class="ep-desc">Emergency contacts</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── FEATURES ─── -->
+    <section class="section section-alt" id="features">
+      <div class="container">
+        <div class="section-header">
+          <div class="section-eyebrow">Capabilities</div>
+          <h2 class="section-title">Core Features</h2>
+          <p class="section-desc">Every feature designed with accessibility at its core</p>
+        </div>
+        <div class="features-grid">
+          <div class="feature-card feature-card-large">
+            <div class="feature-icon-wrap" aria-hidden="true">
+              <div class="feature-icon feature-icon-blue">👁️</div>
+            </div>
+            <h3 class="feature-title">Real-Time Object Detection</h3>
+            <p class="feature-desc">YOLOv8-powered vision model detects obstacles, vehicles, pedestrians and more. Fused with ultrasonic + ToF sensor data from the ESP32 smart cane for sub-100ms alerts.</p>
+            <ul class="feature-tags" aria-label="Related technologies">
+              <li class="tag">YOLOv8</li>
+              <li class="tag">OpenCV</li>
+              <li class="tag">Sensor Fusion</li>
+              <li class="tag">ESP32</li>
+            </ul>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon-wrap" aria-hidden="true">
+              <div class="feature-icon feature-icon-red">🆘</div>
+            </div>
+            <h3 class="feature-title">Emergency SOS</h3>
+            <p class="feature-desc">One-tap or cane-button SOS instantly notifies emergency contacts with GPS location via SMS and email.</p>
+            <ul class="feature-tags">
+              <li class="tag">GPS</li>
+              <li class="tag">SMS/Email</li>
+              <li class="tag">Geolocator</li>
+            </ul>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon-wrap" aria-hidden="true">
+              <div class="feature-icon feature-icon-green">🧭</div>
+            </div>
+            <h3 class="feature-title">Voice Navigation</h3>
+            <p class="feature-desc">Fully spoken turn-by-turn directions. All UI actions are announced via TTS, and voice commands are accepted.</p>
+            <ul class="feature-tags">
+              <li class="tag">Flutter TTS</li>
+              <li class="tag">Speech-to-Text</li>
+              <li class="tag">Maps API</li>
+            </ul>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon-wrap" aria-hidden="true">
+              <div class="feature-icon feature-icon-yellow">📡</div>
+            </div>
+            <h3 class="feature-title">Smart Cane (BLE)</h3>
+            <p class="feature-desc">Paired over Bluetooth LE, the ESP32 cane streams ultrasonic, ToF, accelerometer, and gyroscope readings at 10 Hz with vibration haptic feedback.</p>
+            <ul class="feature-tags">
+              <li class="tag">BLE</li>
+              <li class="tag">Ultrasonic</li>
+              <li class="tag">ToF Sensor</li>
+              <li class="tag">IMU</li>
+            </ul>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon-wrap" aria-hidden="true">
+              <div class="feature-icon feature-icon-purple">🎙️</div>
+            </div>
+            <h3 class="feature-title">Scene Description</h3>
+            <p class="feature-desc">On demand, the AI narrates the full visual scene — objects, their directions and distances — as a natural language sentence.</p>
+            <ul class="feature-tags">
+              <li class="tag">AI Vision</li>
+              <li class="tag">NLG</li>
+              <li class="tag">TTS</li>
+            </ul>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon-wrap" aria-hidden="true">
+              <div class="feature-icon feature-icon-cyan">🔐</div>
+            </div>
+            <h3 class="feature-title">Secure Auth</h3>
+            <p class="feature-desc">JWT-based access + refresh token flow. SQLite database (upgradable to PostgreSQL). All API routes are authenticated.</p>
+            <ul class="feature-tags">
+              <li class="tag">JWT</li>
+              <li class="tag">FastAPI</li>
+              <li class="tag">SQLAlchemy</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── API EXPLORER ─── -->
+    <section class="section" id="api-explorer">
+      <div class="container">
+        <div class="section-header">
+          <div class="section-eyebrow">Try It Live</div>
+          <h2 class="section-title">API Explorer</h2>
+          <p class="section-desc">Test the public endpoint directly from this dashboard</p>
+        </div>
+        <div class="explorer-grid">
+          <div class="explorer-sidebar">
+            <h3 class="explorer-sidebar-title">Endpoints</h3>
+            <ul class="explorer-nav" role="list" id="explorerNav">
+              <li><button class="explorer-nav-btn active" data-ep="root" onclick="selectEndpoint('root', this)">GET /</button></li>
+              <li><button class="explorer-nav-btn" data-ep="health" onclick="selectEndpoint('health', this)">GET /health</button></li>
+              <li><button class="explorer-nav-btn" data-ep="docs" onclick="selectEndpoint('docs', this)">GET /docs</button></li>
+              <li><button class="explorer-nav-btn" data-ep="riskSafe" onclick="selectEndpoint('riskSafe', this)">POST /ai/risk (safe)</button></li>
+              <li><button class="explorer-nav-btn" data-ep="riskDanger" onclick="selectEndpoint('riskDanger', this)">POST /ai/risk (danger)</button></li>
+            </ul>
+          </div>
+          <div class="explorer-main">
+            <div class="explorer-request-panel">
+              <div class="explorer-method-url">
+                <span class="ep-method" id="expMethod">GET</span>
+                <span class="exp-url" id="expUrl">http://localhost:8000/</span>
+                <button class="btn btn-primary btn-sm" id="runBtn" onclick="runRequest()">▶ Run</button>
+              </div>
+              <div class="explorer-body-wrap" id="explorerBodyWrap" style="display:none">
+                <div class="explorer-body-label">Request Body (JSON)</div>
+                <textarea class="explorer-body" id="explorerBody" rows="6" aria-label="Request body JSON"></textarea>
+              </div>
+              <div class="explorer-note" id="explorerNote"></div>
+            </div>
+            <div class="explorer-response-panel">
+              <div class="response-header">
+                <span class="response-title">Response</span>
+                <span class="response-status" id="responseStatus"></span>
+                <span class="response-time" id="responseTime"></span>
+              </div>
+              <pre class="response-body" id="responseBody" aria-live="polite">Click ▶ Run to execute the request</pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── ARCHITECTURE ─── -->
+    <section class="section section-alt" id="architecture">
+      <div class="container">
+        <div class="section-header">
+          <div class="section-eyebrow">System Design</div>
+          <h2 class="section-title">Architecture</h2>
+          <p class="section-desc">Full-stack accessible mobility system from edge to cloud</p>
+        </div>
+        <div class="arch-diagram" aria-label="System architecture diagram">
+          <div class="arch-layer arch-layer-device">
+            <div class="arch-layer-label">Edge Device</div>
+            <div class="arch-nodes">
+              <div class="arch-node">
+                <div class="arch-node-icon">🦯</div>
+                <div class="arch-node-name">ESP32</div>
+                <div class="arch-node-desc">Ultrasonic + ToF + IMU</div>
+              </div>
+              <div class="arch-node">
+                <div class="arch-node-icon">📱</div>
+                <div class="arch-node-name">Mobile (Flutter)</div>
+                <div class="arch-node-desc">Camera + GPS + BLE</div>
+              </div>
+            </div>
+          </div>
+          <div class="arch-arrow" aria-hidden="true">→</div>
+          <div class="arch-layer arch-layer-backend">
+            <div class="arch-layer-label">Backend</div>
+            <div class="arch-nodes">
+              <div class="arch-node arch-node-highlight">
+                <div class="arch-node-icon">⚡</div>
+                <div class="arch-node-name">FastAPI</div>
+                <div class="arch-node-desc">REST API + JWT Auth</div>
+              </div>
+              <div class="arch-node">
+                <div class="arch-node-icon">🤖</div>
+                <div class="arch-node-name">AI Engine</div>
+                <div class="arch-node-desc">YOLOv8 + Risk Rules</div>
+              </div>
+            </div>
+          </div>
+          <div class="arch-arrow" aria-hidden="true">→</div>
+          <div class="arch-layer arch-layer-data">
+            <div class="arch-layer-label">Data</div>
+            <div class="arch-nodes">
+              <div class="arch-node">
+                <div class="arch-node-icon">🗄️</div>
+                <div class="arch-node-name">SQLite / Postgres</div>
+                <div class="arch-node-desc">Users + Events + Sensors</div>
+              </div>
+              <div class="arch-node">
+                <div class="arch-node-icon">🔔</div>
+                <div class="arch-node-name">Notifications</div>
+                <div class="arch-node-desc">SMS + Email SOS</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Flutter Setup Guide -->
+        <div class="setup-box" id="flutter-setup">
+          <div class="setup-box-header">
+            <span class="setup-icon">📱</span>
+            <h3 class="setup-title">Flutter Mobile App Setup</h3>
+            <span class="badge badge-gray">Step-by-step</span>
+          </div>
+          <div class="setup-steps">
+            <div class="setup-step">
+              <div class="step-num">1</div>
+              <div class="step-content">
+                <div class="step-title">Install Flutter SDK</div>
+                <p class="step-desc">Download the Flutter SDK for Windows from the official site</p>
+                <a href="https://docs.flutter.dev/get-started/install/windows" target="_blank" rel="noopener" class="step-link">flutter.dev/get-started ↗</a>
+              </div>
+            </div>
+            <div class="setup-step">
+              <div class="step-num">2</div>
+              <div class="step-content">
+                <div class="step-title">Extract &amp; add to PATH</div>
+                <p class="step-desc">Extract to <code>C:\flutter</code> then add <code>C:\flutter\bin</code> to your system PATH</p>
+                <pre class="step-code">[Environment]::SetEnvironmentVariable("Path", $env:Path + ";C:\flutter\bin", "User")</pre>
+              </div>
+            </div>
+            <div class="setup-step">
+              <div class="step-num">3</div>
+              <div class="step-content">
+                <div class="step-title">Verify installation</div>
+                <pre class="step-code">flutter doctor</pre>
+                <p class="step-desc">Fix any issues reported by flutter doctor (Android Studio, Chrome, etc.)</p>
+              </div>
+            </div>
+            <div class="setup-step">
+              <div class="step-num">4</div>
+              <div class="step-content">
+                <div class="step-title">Run the mobile app</div>
+                <pre class="step-code">cd echo-assist-ai-phase1\echo-assist-ai\mobile
+flutter pub get
+flutter run -d chrome</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ─── FOOTER ─── -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <span class="logo-icon" aria-hidden="true">◉</span>
+          <span class="logo-text">ECHO<span class="logo-accent">-ASSIST</span> AI</span>
+        </div>
+        <p class="footer-tagline">AI for Inclusive Mobility — Phase 1</p>
+        <div class="footer-links">
+          <a href="http://localhost:8000/docs" target="_blank" rel="noopener">API Docs</a>
+          <a href="http://localhost:8000/redoc" target="_blank" rel="noopener">ReDoc</a>
+          <a href="http://localhost:8000/health" target="_blank" rel="noopener">Health</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
