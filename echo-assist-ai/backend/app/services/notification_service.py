@@ -57,7 +57,8 @@ class MockNotificationService(NotificationService):
             message,
         )
 
-        return True
+        # A log-only mock has not delivered a real SMS.
+        return False
 
 
     def send_email(
@@ -68,13 +69,13 @@ class MockNotificationService(NotificationService):
     ) -> bool:
 
         logger.info(
-            "[MOCK EMAIL] to=%s subject=%s message=%s",
+            "[MOCK EMAIL] to=%s subject=%s (content withheld)",
             email,
             subject,
-            message,
         )
 
-        return True
+        # A log-only mock has not delivered a real email.
+        return False
 
 
     def send_push(
@@ -91,7 +92,8 @@ class MockNotificationService(NotificationService):
             message,
         )
 
-        return True
+        # A log-only mock has not delivered a real push notification.
+        return False
 
 
 # ============================================================

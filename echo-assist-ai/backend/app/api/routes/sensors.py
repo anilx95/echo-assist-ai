@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from fastapi import (
     APIRouter,
     BackgroundTasks,
@@ -23,6 +25,10 @@ from app.services.auth_service import get_current_user
 from app.services.sensor_fusion_service import sensor_fusion_service
 from app.services.fall_detection_service import fall_detection_service
 from app.services.emergency_service import emergency_service
+from app.services.notification_service import (
+    NotificationService,
+    get_notification_service,
+)
 
 from app.services.emergency_countdown_service import (
     emergency_countdown_task,
@@ -49,6 +55,7 @@ def ingest_sensor_data(
     background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
+    notifier: NotificationService = Depends(get_notification_service),
 ):
 
     # --------------------------------------------------------
@@ -63,19 +70,11 @@ def ingest_sensor_data(
 
 
     # --------------------------------------------------------
-    # AUTO REGISTER DEVICE
-    # --------------------------------------------------------
-
     if not device:
-
-        device = Device(
-            user_id=current_user.id,
-            device_id=packet.device_id,
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Device is not registered. Register it before sending sensor data.",
         )
-
-        db.add(device)
-        db.commit()
-        db.refresh(device)
 
 
     # --------------------------------------------------------
@@ -95,6 +94,9 @@ def ingest_sensor_data(
     # --------------------------------------------------------
 
     device.connection_status = "connected"
+    device.last_connected_at = datetime.now(timezone.utc)
+    device.battery_percent = packet.battery_percent
+    device.sensor_health = "healthy"
 
 
     # --------------------------------------------------------
@@ -156,23 +158,26 @@ def ingest_sensor_data(
 
     if fall_analysis["emergency_detected"]:
 
-        emergency_event = (
-            emergency_service.create_pending_emergency(
-
+        event_type = fall_analysis["event_type"]
+        if event_type == "MANUAL_SOS":
+            emergency_event = emergency_service.trigger_emergency(
                 db=db,
-
                 user=current_user,
-
-                event_type=fall_analysis[
-                    "event_type"
-                ],
-
-                # GPS is not yet included in SensorPacket.
-
+                notifier=notifier,
+                event_type=event_type,
+                # The ESP32 protocol currently does not carry GPS coordinates.
                 latitude=None,
                 longitude=None,
             )
-        )
+        else:
+            emergency_event = emergency_service.create_pending_emergency(
+                db=db,
+                user=current_user,
+                event_type=event_type,
+                # The ESP32 protocol currently does not carry GPS coordinates.
+                latitude=None,
+                longitude=None,
+            )
 
 
         # ----------------------------------------------------
@@ -250,6 +255,27 @@ def get_latest_reading(
 
 
     return reading
+
+
+@router.get(
+    "/history",
+    response_model=list[SensorReadingResponse],
+)
+def get_sensor_history(
+    limit: int = 50,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Return only the signed-in user's recent sensor readings."""
+    bounded_limit = max(1, min(limit, 200))
+    return (
+        db.query(SensorReading)
+        .join(Device, Device.id == SensorReading.device_id)
+        .filter(Device.user_id == current_user.id)
+        .order_by(SensorReading.received_at.desc())
+        .limit(bounded_limit)
+        .all()
+    )
 
 
 # ============================================================

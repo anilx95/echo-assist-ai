@@ -29,7 +29,8 @@ class DepthEstimationService:
         self.ready = False
         self.error_message = None
 
-        self._load_model()
+        # Defer model initialization until image inference is requested.
+        # Core APIs must not depend on a local model cache or outbound download.
 
 
     # ========================================================
@@ -216,6 +217,10 @@ class DepthEstimationService:
         self,
         image_path,
     ):
+
+        if not self.ready:
+
+            self._load_model()
 
         if not self.ready:
 

@@ -8,6 +8,7 @@ No secrets are hardcoded here - see .env.example for the expected keys.
 from functools import lru_cache
 from typing import List
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -24,12 +25,30 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    PASSWORD_RESET_TOKEN_EXPIRE_MINUTES: int = 30
+    EMAIL_VERIFICATION_TOKEN_EXPIRE_MINUTES: int = 60 * 24
+    RATE_LIMIT_REQUESTS: int = 120
+    RATE_LIMIT_WINDOW_SECONDS: int = 60
 
     # Database
-    DATABASE_URL: str = "sqlite:///./echo_assist.db"
+    DATABASE_URL: str = "postgresql+psycopg://echo_assist:echo_assist@localhost:5432/echo_assist"
+    DATABASE_CONNECT_TIMEOUT_SECONDS: int = 5
+
+    @field_validator("DEBUG", mode="before")
+    @classmethod
+    def normalize_debug(cls, value: object) -> object:
+        """Accept legacy deployment labels while keeping DEBUG a real boolean."""
+        if isinstance(value, str):
+            normalized = value.strip().lower()
+            if normalized in {"release", "production", "prod"}:
+                return False
+            if normalized in {"development", "dev"}:
+                return True
+        return value
 
     # CORS
     ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:8080"
+    ALLOWED_ORIGIN_REGEX: str = r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$"
 
     # Maps / Navigation
     MAPS_API_KEY: str = ""
@@ -49,6 +68,7 @@ class Settings(BaseSettings):
     # Resend Email
     RESEND_API_KEY: str = ""
     RESEND_FROM_EMAIL: str = ""
+    FRONTEND_BASE_URL: str = "http://localhost:8000"
 
     # Push notifications
     PUSH_NOTIFICATION_KEY: str = ""

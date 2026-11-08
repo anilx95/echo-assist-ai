@@ -11,7 +11,21 @@ from torchvision import transforms
 # PROJECT PATHS
 # ============================================================
 
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
+def _find_fast_scnn_root() -> Path:
+    candidates = [
+        Path(__file__).resolve().parents[3] / "ai_engine" / "segmentation" / "Fast-SCNN-pytorch",
+        Path(__file__).resolve().parents[2] / "ai_engine" / "segmentation" / "Fast-SCNN-pytorch",
+        Path("/app/ai_engine/segmentation/Fast-SCNN-pytorch"),
+        Path("/ai_engine/segmentation/Fast-SCNN-pytorch"),
+        Path.cwd() / "ai_engine" / "segmentation" / "Fast-SCNN-pytorch",
+    ]
+    for c in candidates:
+        if c.exists():
+            return c
+    return Path(__file__).resolve().parents[3] / "ai_engine" / "segmentation" / "Fast-SCNN-pytorch"
+
+
+PROJECT_ROOT = _find_fast_scnn_root().parent.parent
 
 FAST_SCNN_ROOT = (
     PROJECT_ROOT
@@ -37,9 +51,6 @@ if str(FAST_SCNN_ROOT) not in sys.path:
     )
 
 
-from models.fast_scnn import get_fast_scnn
-
-
 # ============================================================
 # SEGMENTATION SERVICE
 # ============================================================
@@ -52,10 +63,6 @@ class SegmentationService:
 
 
     def __init__(self):
-
-        print(
-            "Loading Fast-SCNN segmentation model..."
-        )
 
         self.device = torch.device(
             "cuda"
@@ -88,36 +95,23 @@ class SegmentationService:
         ])
 
 
-        # ----------------------------------------------------
-        # LOAD MODEL
-        # ----------------------------------------------------
+        self.model = None
+
+
+    def _ensure_model(self):
+        """Load Fast-SCNN only when a frame requires segmentation."""
+        if self.model is not None:
+            return
+
+        from models.fast_scnn import get_fast_scnn
 
         self.model = get_fast_scnn(
-
             "citys",
-
             pretrained=True,
-
-            root=str(
-                WEIGHTS_FOLDER
-            ),
-
-            map_cpu=(
-                self.device.type
-                == "cpu"
-            ),
-
-        ).to(
-            self.device
-        )
-
-
+            root=str(WEIGHTS_FOLDER),
+            map_cpu=(self.device.type == "cpu"),
+        ).to(self.device)
         self.model.eval()
-
-
-        print(
-            f"Fast-SCNN ready on {self.device}"
-        )
 
 
     # ========================================================
@@ -172,6 +166,8 @@ class SegmentationService:
         self,
         image_path,
     ):
+
+        self._ensure_model()
 
         # ----------------------------------------------------
         # LOAD IMAGE

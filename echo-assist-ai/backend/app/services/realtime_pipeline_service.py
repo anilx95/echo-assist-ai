@@ -1,158 +1,60 @@
+"""Short-lived per-user realtime frame state.
+
+This is deliberately marked as transient. Redis can replace this adapter when
+the application runs with multiple workers; users must never share a camera
+session in a single process.
+"""
+
 import time
 from collections import deque
 from threading import Lock
 
 
 class RealtimePipelineService:
-
     def __init__(self):
+        self._sessions: dict[int, dict] = {}
+        self._lock = Lock()
 
-        self.frame_number = 0
+    def _session(self, user_id: int) -> dict:
+        with self._lock:
+            return self._sessions.setdefault(user_id, {
+                "frame_number": 0, "last_processed_time": 0.0,
+                "frame_history": deque(maxlen=30), "latest_result": None,
+            })
 
-        self.last_processed_time = 0.0
-
-        self.processing_lock = Lock()
-
-        self.frame_history = deque(
-            maxlen=30
-        )
-
-        self.latest_result = None
-
-
-    # ========================================================
-    # CHECK IF FRAME SHOULD BE PROCESSED
-    # ========================================================
-
-    def should_process_frame(
-        self,
-        minimum_interval_seconds: float = 0.3,
-    ) -> bool:
-
-        current_time = time.time()
-
-        elapsed = (
-            current_time
-            - self.last_processed_time
-        )
-
-        if elapsed < minimum_interval_seconds:
-
+    def should_process_frame(self, user_id: int, minimum_interval_seconds: float = 0.3) -> bool:
+        session = self._session(user_id)
+        now = time.time()
+        if now - session["last_processed_time"] < minimum_interval_seconds:
             return False
-
-        self.last_processed_time = (
-            current_time
-        )
-
+        session["last_processed_time"] = now
         return True
 
+    def start_frame(self, user_id: int) -> dict:
+        session = self._session(user_id)
+        session["frame_number"] += 1
+        return {"frame_number": session["frame_number"], "timestamp": time.time()}
 
-    # ========================================================
-    # START FRAME
-    # ========================================================
-
-    def start_frame(self):
-
-        self.frame_number += 1
-
-        return {
-            "frame_number": self.frame_number,
-            "timestamp": time.time(),
+    def store_result(self, user_id: int, result: dict) -> dict:
+        session = self._session(user_id)
+        record = {
+            "frame_number": session["frame_number"], "timestamp": time.time(),
+            "scene_action": result.get("scene_decision", {}).get("action"),
+            "objects_detected": result.get("objects_detected", 0), "result": result,
         }
+        session["frame_history"].append(record)
+        session["latest_result"] = result
+        return record
+
+    def get_latest_result(self, user_id: int):
+        return self._session(user_id)["latest_result"]
+
+    def get_history(self, user_id: int, limit: int = 10):
+        return list(self._session(user_id)["frame_history"])[-limit:]
+
+    def reset(self, user_id: int) -> None:
+        with self._lock:
+            self._sessions.pop(user_id, None)
 
 
-    # ========================================================
-    # STORE FRAME RESULT
-    # ========================================================
-
-    def store_result(
-        self,
-        result: dict,
-    ):
-
-        frame_record = {
-
-            "frame_number": (
-                self.frame_number
-            ),
-
-            "timestamp": time.time(),
-
-            "scene_action": (
-                result
-                .get(
-                    "scene_decision",
-                    {},
-                )
-                .get(
-                    "action"
-                )
-            ),
-
-            "objects_detected": (
-                result.get(
-                    "objects_detected",
-                    0,
-                )
-            ),
-
-            "result": result,
-        }
-
-
-        self.frame_history.append(
-            frame_record
-        )
-
-
-        self.latest_result = result
-
-
-        return frame_record
-
-
-    # ========================================================
-    # GET LATEST RESULT
-    # ========================================================
-
-    def get_latest_result(self):
-
-        return self.latest_result
-
-
-    # ========================================================
-    # GET RECENT FRAME HISTORY
-    # ========================================================
-
-    def get_history(
-        self,
-        limit: int = 10,
-    ):
-
-        history = list(
-            self.frame_history
-        )
-
-        return history[
-            -limit:
-        ]
-
-
-    # ========================================================
-    # RESET REAL-TIME SESSION
-    # ========================================================
-
-    def reset(self):
-
-        self.frame_number = 0
-
-        self.last_processed_time = 0.0
-
-        self.frame_history.clear()
-
-        self.latest_result = None
-
-
-realtime_pipeline_service = (
-    RealtimePipelineService()
-)
+realtime_pipeline_service = RealtimePipelineService()

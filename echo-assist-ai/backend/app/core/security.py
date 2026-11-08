@@ -4,6 +4,7 @@ Security helpers: password hashing and JWT creation/verification.
 
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
+import uuid
 
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -29,10 +30,11 @@ def create_access_token(subject: str, expires_minutes: Optional[int] = None) -> 
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
-def create_refresh_token(subject: str) -> str:
+def create_refresh_token(subject: str, session_id: str | None = None) -> tuple[str, str, datetime]:
     expire = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
-    payload = {"sub": subject, "exp": expire, "type": "refresh"}
-    return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    session_id = session_id or str(uuid.uuid4())
+    payload = {"sub": subject, "exp": expire, "type": "refresh", "sid": session_id}
+    return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM), session_id, expire
 
 
 def decode_token(token: str) -> dict[str, Any]:

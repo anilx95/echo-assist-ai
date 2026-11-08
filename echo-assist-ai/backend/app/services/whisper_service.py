@@ -23,25 +23,27 @@ class WhisperService:
             "int8",
         )
 
-        print(
-            f"Loading Whisper model: {model_name}..."
-        )
+        self.model_name = model_name
+        self.device = device
+        self.compute_type = compute_type
+        self.model = None
 
-        self.model = WhisperModel(
-            model_name,
-            device=device,
-            compute_type=compute_type,
-        )
 
-        print(
-            f"Whisper {model_name} ready on {device}"
-        )
+    def _ensure_model(self) -> None:
+        if self.model is None:
+            self.model = WhisperModel(
+                self.model_name,
+                device=self.device,
+                compute_type=self.compute_type,
+            )
 
 
     def transcribe(
         self,
         audio_path: str,
     ):
+
+        self._ensure_model()
 
         segments, info = self.model.transcribe(
 

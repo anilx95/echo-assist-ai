@@ -1,17 +1,42 @@
+import os
 from pathlib import Path
-
 import cv2
-from ultralytics import YOLO
+
+
+def _resolve_yolo_path() -> str:
+    candidates = [
+        Path(os.environ["YOLO_MODEL_PATH"]) if "YOLO_MODEL_PATH" in os.environ else None,
+        Path(__file__).resolve().parents[2] / "yolo11n.pt",
+        Path(__file__).resolve().parents[3] / "yolo11n.pt",
+        Path("/app/yolo11n.pt"),
+        Path.cwd() / "yolo11n.pt",
+        Path.cwd() / "backend" / "yolo11n.pt",
+    ]
+    for c in candidates:
+        if c and c.exists():
+            return str(c)
+    return "yolo11n.pt"
 
 
 class ObjectDetectionService:
 
     def __init__(self):
-        print("Loading YOLO11 Nano for backend...")
+        self.model = None
+        self.error_message = None
 
-        self.model = YOLO("yolo11n.pt")
+    def _ensure_model(self):
+        """Load YOLO only when an image-inference endpoint is actually used."""
+        if self.model is not None:
+            return
+        try:
+            from ultralytics import YOLO
 
-        print("YOLO11 Nano backend service ready.")
+            model_path = _resolve_yolo_path()
+            self.model = YOLO(model_path)
+            self.error_message = None
+        except Exception as exc:
+            self.error_message = str(exc)
+            raise RuntimeError("Object detection model is unavailable") from exc
 
 
     def calculate_direction(
@@ -35,6 +60,8 @@ class ObjectDetectionService:
 
 
     def detect_image(self, image_path):
+
+        self._ensure_model()
 
         frame = cv2.imread(str(image_path))
 

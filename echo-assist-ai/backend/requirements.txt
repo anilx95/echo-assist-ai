@@ -4,6 +4,8 @@ pydantic==2.7.4
 pydantic-settings==2.3.4
 sqlalchemy==2.0.31
 alembic==1.13.2
+psycopg[binary]==3.2.3
+email-validator==2.2.0
 python-jose[cryptography]==3.3.0
 passlib==1.7.4
 bcrypt==4.0.1
@@ -13,3 +15,14 @@ websockets==12.0
 httpx==0.27.0
 pytest==8.2.2
 pytest-asyncio==0.23.7
+numpy>=1.26,<3
+pandas>=2.2,<3
+joblib>=1.4,<2
+Pillow>=10,<12
+opencv-python-headless>=4.10,<5
+torch>=2.3,<2.7
+torchvision>=0.18,<0.22
+ultralytics>=8.3,<9
+faster-whisper>=1.0,<2
+twilio>=9,<10
+resend>=2,<3

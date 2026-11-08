@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -19,6 +19,9 @@ class Device(Base):
     firmware_version: Mapped[str | None] = mapped_column(String(20), nullable=True)
     last_connected_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     connection_status: Mapped[str] = mapped_column(String(20), default="disconnected")
+    battery_percent: Mapped[float | None] = mapped_column(Float, nullable=True)
+    sensor_health: Mapped[str] = mapped_column(String(20), nullable=False, default="unknown")
+    is_simulator: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)

@@ -1,18 +1,27 @@
+import os
 from pathlib import Path
 
 import joblib
 import pandas as pd
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
+def _resolve_risk_model_path() -> Path:
+    candidates = [
+        Path(os.environ["RISK_MODEL_PATH"]) if "RISK_MODEL_PATH" in os.environ else None,
+        Path(__file__).resolve().parents[3] / "ai_engine" / "risk_prediction" / "models" / "risk_model.joblib",
+        Path(__file__).resolve().parents[2] / "ai_engine" / "risk_prediction" / "models" / "risk_model.joblib",
+        Path("/app/ai_engine/risk_prediction/models/risk_model.joblib"),
+        Path("/ai_engine/risk_prediction/models/risk_model.joblib"),
+        Path.cwd() / "ai_engine" / "risk_prediction" / "models" / "risk_model.joblib",
+        Path.cwd() / "models" / "risk_model.joblib",
+    ]
+    for candidate in candidates:
+        if candidate and candidate.exists():
+            return candidate
+    return Path(__file__).resolve().parents[3] / "ai_engine" / "risk_prediction" / "models" / "risk_model.joblib"
 
-MODEL_PATH = (
-    PROJECT_ROOT
-    / "ai_engine"
-    / "risk_prediction"
-    / "models"
-    / "risk_model.joblib"
-)
+
+MODEL_PATH = _resolve_risk_model_path()
 
 
 class RiskPredictionService:

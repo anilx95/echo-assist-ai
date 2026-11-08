@@ -27,6 +27,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 
 from app.models.device import Device
+from app.models.detection_event import DetectionEvent
 from app.models.risk_event import RiskEvent
 from app.models.sensor_reading import SensorReading
 from app.models.user import User
@@ -1207,15 +1208,16 @@ async def process_realtime_frame(
         raise HTTPException(status_code=400, detail="Image file is required.")
 
     if not realtime_pipeline_service.should_process_frame(
+        user_id=current_user.id,
         minimum_interval_seconds=0.3
     ):
         return {
             "pipeline_status": "FRAME_SKIPPED",
             "reason": "Frame arrived before minimum processing interval.",
-            "latest_result": realtime_pipeline_service.get_latest_result(),
+            "latest_result": realtime_pipeline_service.get_latest_result(current_user.id),
         }
 
-    frame_info = realtime_pipeline_service.start_frame()
+    frame_info = realtime_pipeline_service.start_frame(current_user.id)
     suffix = Path(file.filename).suffix or ".jpg"
 
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
@@ -1237,18 +1239,34 @@ async def process_realtime_frame(
             "timestamp": frame_info["timestamp"],
         }
 
-        realtime_pipeline_service.store_result(result)
+        realtime_pipeline_service.store_result(current_user.id, result)
         return result
 
     finally:
         Path(temp_path).unlink(missing_ok=True)
 
 
+@router.get("/history")
+def detection_history(
+    limit: int = 50,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    limit = max(1, min(limit, 100))
+    records = db.query(DetectionEvent).filter(DetectionEvent.user_id == current_user.id).order_by(
+        DetectionEvent.created_at.desc()
+    ).limit(limit).all()
+    return [{
+        "id": item.id, "class_name": item.class_name, "confidence": item.confidence,
+        "position": item.position, "created_at": item.created_at,
+    } for item in records]
+
+
 @router.get("/pipeline/realtime/latest")
 def get_latest_realtime_result(
     current_user: User = Depends(get_current_user),
 ):
-    result = realtime_pipeline_service.get_latest_result()
+    result = realtime_pipeline_service.get_latest_result(current_user.id)
 
     if result is None:
         raise HTTPException(
@@ -1266,7 +1284,7 @@ def get_realtime_history(
 ):
     limit = max(1, min(limit, 30))
     return {
-        "frames": realtime_pipeline_service.get_history(limit=limit)
+        "frames": realtime_pipeline_service.get_history(current_user.id, limit=limit)
     }
 
 
@@ -1274,7 +1292,7 @@ def get_realtime_history(
 def reset_realtime_session(
     current_user: User = Depends(get_current_user),
 ):
-    realtime_pipeline_service.reset()
+    realtime_pipeline_service.reset(current_user.id)
     temporal_tracking_service.reset()
     class_stabilization_service.reset()
 

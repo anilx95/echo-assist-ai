@@ -10,10 +10,12 @@ from app.database import get_db
 from app.core.config import settings
 
 from app.models.user import User
+from app.models.navigation_route import NavigationRoute
 
 from app.schemas.navigation import (
     NavigationProgressRequest,
     NavigationProgressResponse,
+    NavigationHistoryResponse,
     RouteRequest,
     RouteResponse,
 )
@@ -31,6 +33,24 @@ router = APIRouter(
     prefix="/navigation",
     tags=["navigation"],
 )
+
+
+@router.get(
+    "/history",
+    response_model=list[NavigationHistoryResponse],
+)
+def navigation_history(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Return only provider-backed routes persisted for the signed-in user."""
+    return (
+        db.query(NavigationRoute)
+        .filter(NavigationRoute.user_id == current_user.id)
+        .order_by(NavigationRoute.created_at.desc())
+        .limit(50)
+        .all()
+    )
 
 
 # ============================================================
@@ -125,39 +145,14 @@ def get_route(
             )
 
 
-    # ========================================================
-    # DEVELOPMENT FALLBACK ROUTE
-    # ========================================================
-
-    route = (
-        navigation_service
-        .create_mock_route(
-
-            destination=(
-                payload.destination
-            ),
-
-            origin_lat=(
-                payload.origin_lat
-            ),
-
-            origin_lng=(
-                payload.origin_lng
-            ),
-
-            destination_lat=(
-                payload.destination_lat
-            ),
-
-            destination_lng=(
-                payload.destination_lng
-            ),
-        )
-    )
-
-
-    return RouteResponse(
-        **route
+    # Do not generate plausible-but-invented walking instructions.  A route
+    # can only be requested after a real routing provider has been configured.
+    raise HTTPException(
+        status_code=503,
+        detail=(
+            "Walking navigation is unavailable because no routing provider is "
+            "configured. Set MAPS_API_KEY and retry."
+        ),
     )
 
 

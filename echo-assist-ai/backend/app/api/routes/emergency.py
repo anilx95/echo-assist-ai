@@ -24,6 +24,7 @@ from app.schemas.emergency import (
 )
 
 from app.services.auth_service import get_current_user
+from app.services.audit_service import record_audit_event
 from app.services.emergency_service import emergency_service
 from app.services.fall_detection_service import (
     fall_detection_service,
@@ -74,6 +75,15 @@ def trigger_emergency(
         latitude=payload.latitude,
         longitude=payload.longitude,
     )
+    record_audit_event(
+        db,
+        event_type="emergency.triggered",
+        message="Emergency event activated",
+        user_id=current_user.id,
+        severity="warning",
+        context={"emergency_id": event.id, "event_type": event.event_type},
+    )
+    db.commit()
 
     return event
 
@@ -118,6 +128,15 @@ def cancel_emergency(
 
     event.resolved_at = datetime.now(
         timezone.utc
+    )
+
+    record_audit_event(
+        db,
+        event_type="emergency.cancelled",
+        message="Emergency event cancelled by user",
+        user_id=current_user.id,
+        severity="warning",
+        context={"emergency_id": event.id},
     )
 
 

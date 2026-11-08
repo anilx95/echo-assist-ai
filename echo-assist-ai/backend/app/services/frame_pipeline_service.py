@@ -5,6 +5,7 @@ from app.services.navigation_command_service import (
 )
 
 from app.models.device import Device
+from app.models.detection_event import DetectionEvent
 from app.models.sensor_reading import SensorReading
 from app.services.class_stabilization_service import (
     class_stabilization_service,
@@ -92,6 +93,21 @@ class FramePipelineService:
                 detections=raw_detections,
             )
         )
+
+        # Persist the raw vision observations with no claim that the distance
+        # is camera-measured. Risk/distance provenance is added downstream.
+        for detection in detections:
+            box = detection.get("bounding_box", {})
+            db.add(DetectionEvent(
+                user_id=user_id,
+                class_name=detection.get("object_type", "unknown"),
+                confidence=float(detection.get("confidence", 0.0)),
+                position=detection.get("direction", "center"),
+                bbox_x1=box.get("x1"), bbox_y1=box.get("y1"),
+                bbox_x2=box.get("x2"), bbox_y2=box.get("y2"),
+            ))
+        if detections:
+            db.commit()
 
 
         # ==================================================

@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel, Field, ConfigDict
 
 
@@ -82,3 +84,16 @@ class NavigationProgressResponse(BaseModel):
     total_distance_m: float | None = None
 
     estimated_time_minutes: float | None = None
+
+
+class NavigationHistoryResponse(BaseModel):
+    route_id: str
+    destination: str
+    total_distance_m: float
+    estimated_time_minutes: float
+    navigation_status: str
+    mock_mode: bool
+    created_at: datetime
+    completed_at: datetime | None = None
+
+    model_config = ConfigDict(from_attributes=True)

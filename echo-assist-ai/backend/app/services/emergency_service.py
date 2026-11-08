@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 
 from app.models.contact import EmergencyContact
 from app.models.emergency_event import EmergencyEvent
+from app.models.notification import Notification
 from app.models.user import User
 from app.services.notification_service import NotificationService
 
@@ -181,25 +182,28 @@ class EmergencyService:
         )
 
         for contact in contacts:
-
-            notifier.send_sms(
-                contact.phone_number,
-                message,
-            )
+            sms_delivered = notifier.send_sms(contact.phone_number, message)
+            db.add(Notification(
+                user_id=user.id, sos_alert_id=event.id, channel="sms", recipient=contact.phone_number,
+                title="Emergency Alert", message=message,
+                status="delivered" if sms_delivered else "not_delivered",
+            ))
 
             if contact.email:
+                email_delivered = notifier.send_email(contact.email, "Emergency Alert - ECHO-ASSIST AI", message)
+                db.add(Notification(
+                    user_id=user.id, sos_alert_id=event.id, channel="email", recipient=contact.email,
+                    title="Emergency Alert", message=message,
+                    status="delivered" if email_delivered else "not_delivered",
+                ))
 
-                notifier.send_email(
-                    contact.email,
-                    "Emergency Alert - ECHO-ASSIST AI",
-                    message,
-                )
-
-        notifier.send_push(
-            user.id,
-            "Emergency Alert",
-            message,
-        )
+        push_delivered = notifier.send_push(user.id, "Emergency Alert", message)
+        db.add(Notification(
+            user_id=user.id, sos_alert_id=event.id, channel="push", recipient=None,
+            title="Emergency Alert", message=message,
+            status="delivered" if push_delivered else "not_delivered",
+        ))
+        db.commit()
 
 
 emergency_service = EmergencyService()
