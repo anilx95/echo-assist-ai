@@ -19,6 +19,29 @@ def test_health_check(client):
     assert response.json()["status"] == "ok"
 
 
+def test_cinematic_intro_assets_are_served(client):
+    page = client.get("/")
+    assert page.status_code == 200
+    assert 'id="intro-canvas"' in page.text
+    assert "/static/intro-3d.js" in page.text
+
+    intro_script = client.get("/static/intro-3d.js")
+    assert intro_script.status_code == 200
+    assert "requestAnimationFrame" in intro_script.text
+    assert "CANE_REVEAL" in intro_script.text
+    assert "Main cane shaft" in intro_script.text
+    assert "Ultrasonic sensor module" in intro_script.text
+    assert "ToF sensor module" in intro_script.text
+    assert "Bottom support tip" in intro_script.text
+    assert "exit.finished.then(finishOnce, finishOnce)" in intro_script.text
+    assert "queueMicrotask(finishOnce)" in intro_script.text
+
+    app_script = client.get("/static/app.js")
+    assert app_script.status_code == 200
+    assert "introCompleted" in app_script.text
+    assert "onFinish: completeIntro" in app_script.text
+
+
 def test_local_development_cors_allows_dynamic_local_port(client):
     response = client.options(
         "/auth/login",
@@ -120,3 +143,8 @@ def test_ai_risk_danger_classification(client):
     )
     assert r.status_code == 200
     assert r.json()["risk_level"] == "DANGER"
+
+    history = client.get("/ai/risk/history", headers=headers)
+    assert history.status_code == 200
+    assert len(history.json()) == 1
+    assert history.json()[0]["risk_level"] == "DANGER"

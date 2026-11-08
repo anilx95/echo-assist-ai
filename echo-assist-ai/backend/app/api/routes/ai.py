@@ -302,6 +302,35 @@ def predict_risk(
     )
 
 
+@router.get("/risk/history")
+def risk_history(
+    limit: int = 50,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Return the signed-in user's real recorded risk evaluations."""
+    bounded_limit = max(1, min(limit, 100))
+    records = (
+        db.query(RiskEvent)
+        .filter(RiskEvent.user_id == current_user.id)
+        .order_by(RiskEvent.created_at.desc())
+        .limit(bounded_limit)
+        .all()
+    )
+    return [
+        {
+            "id": item.id,
+            "object_name": item.object_name,
+            "fused_distance_m": item.fused_distance_m,
+            "direction": item.direction,
+            "risk_level": item.risk_level,
+            "message": item.message,
+            "created_at": item.created_at,
+        }
+        for item in records
+    ]
+
+
 # ============================================================
 # SCENE DESCRIPTION
 # ============================================================

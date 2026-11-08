@@ -3,79 +3,64 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#082f49">
-  <title>ECHO-ASSIST AI</title>
+  <meta name="theme-color" content="#061426">
+  <meta name="color-scheme" content="dark">
+  <title>ECHO-ASSIST AI | Independent mobility</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-  <div id="auth-shell" class="auth-shell">
+  <section id="intro-shell" class="intro-shell" aria-labelledby="intro-title">
+    <canvas id="intro-canvas" aria-hidden="true"></canvas>
+    <div class="particle-field" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="intro-wave wave-one" aria-hidden="true"></div><div class="intro-wave wave-two" aria-hidden="true"></div>
+    <button id="skip-intro" class="skip-intro" type="button">Skip intro <span aria-hidden="true">→</span></button>
+    <div class="intro-stage">
+      <div class="cane-scene" aria-hidden="true">
+        <div class="radar-ring ring-one"></div><div class="radar-ring ring-two"></div><div class="radar-ring ring-three"></div>
+        <div class="cane-visual"><span class="cane-handle"></span><span class="cane-shaft"></span><span class="cane-tip"></span><span class="cane-sensor"></span></div>
+        <div class="eye-visual"><span></span></div><div class="radar-sweep"></div>
+      </div>
+      <p id="intro-assembly-status" class="assembly-caption" aria-live="polite">Preparing smart cane components</p>
+      <div class="intro-copy"><p class="intro-kicker">WELCOME TO</p><h1 id="intro-title">ECHO-ASSIST <em>AI</em></h1><p>Your intelligent companion for safer, independent mobility.</p></div>
+    </div>
+  </section>
+
+  <div id="auth-shell" class="auth-shell" hidden>
+    <div class="auth-orb auth-orb-one" aria-hidden="true"></div><div class="auth-orb auth-orb-two" aria-hidden="true"></div>
     <main class="auth-card" aria-labelledby="auth-heading">
       <section class="auth-brand">
-        <div class="logo-mark" aria-hidden="true">EA</div>
-        <p class="eyebrow">Inclusive mobility platform</p>
-        <h1 id="auth-heading">ECHO-ASSIST AI</h1>
-        <p>Connect your smart cane, awareness tools, and support network in one private workspace.</p>
-        <ul><li>Personal data stays account-scoped</li><li>Hardware and simulation are labelled clearly</li><li>Emergency delivery is never assumed</li></ul>
+        <a class="brand-lockup" href="/" aria-label="ECHO-ASSIST AI home"><span class="logo-mark" aria-hidden="true"><i></i></span><span>ECHO-ASSIST <small>AI</small></span></a>
+        <p class="eyebrow">AI Smart Cane for Independent Mobility</p><h1 id="auth-heading">Move with greater confidence.</h1>
+        <p class="auth-lede">One private workspace for your smart cane, awareness tools, and emergency support.</p>
+        <ul class="trust-list"><li><span aria-hidden="true">✓</span> Account-scoped information</li><li><span aria-hidden="true">✓</span> Hardware status shown honestly</li><li><span aria-hidden="true">✓</span> Emergency delivery never assumed</li></ul>
       </section>
       <section class="auth-panel" aria-live="polite">
-        <div class="auth-tabs" role="tablist">
-          <button class="tab active" id="login-tab" type="button" role="tab" aria-selected="true">Sign in</button>
-          <button class="tab" id="register-tab" type="button" role="tab" aria-selected="false">Create account</button>
-        </div>
-        <form id="login-form" novalidate>
-          <h2>Welcome back</h2><p class="muted">Sign in to open your dashboard.</p>
-          <label>Email<input name="email" type="email" autocomplete="email" required></label>
-          <label>Password<span class="password-field"><input name="password" type="password" autocomplete="current-password" required minlength="8"><button class="icon-button" data-toggle-password type="button" aria-label="Show password">◉</button></span></label>
-          <button class="link-button" id="forgot-password" type="button">Forgot password?</button>
-          <button class="primary-button" type="submit">Sign in</button>
-        </form>
-        <form id="register-form" hidden novalidate>
-          <h2>Create your account</h2><p class="muted">Start with your personal ECHO-ASSIST workspace.</p>
-          <label>Full name<input name="full_name" autocomplete="name" required maxlength="120"></label>
-          <label>Email<input name="email" type="email" autocomplete="email" required></label>
-          <label>Password<span class="password-field"><input name="password" type="password" autocomplete="new-password" required minlength="8"><button class="icon-button" data-toggle-password type="button" aria-label="Show password">◉</button></span></label>
-          <label>Confirm password<input name="confirm_password" type="password" autocomplete="new-password" required minlength="8"></label>
-          <label>Preferred language<select name="preferred_language"><option value="en">English</option><option value="hi">Hindi</option><option value="te">Telugu</option></select></label>
-          <button class="primary-button" type="submit">Create account</button>
-        </form>
-        <form id="reset-form" hidden novalidate>
-          <h2>Reset password</h2><p class="muted">Choose a new password for this one-time link.</p>
-          <label>New password<input name="new_password" type="password" autocomplete="new-password" required minlength="8"></label>
-          <button class="primary-button" type="submit">Reset password</button>
-        </form>
-        <form id="verify-form" hidden novalidate>
-          <h2>Verify email</h2><p class="muted">Confirm that you want to verify this address.</p>
-          <button class="primary-button" type="submit">Verify email address</button>
-        </form>
+        <div class="auth-tabs" role="tablist" aria-label="Authentication options"><button class="tab active" id="login-tab" type="button" role="tab" aria-controls="login-form" aria-selected="true">Sign in</button><button class="tab" id="register-tab" type="button" role="tab" aria-controls="register-form" aria-selected="false">Create account</button></div>
+        <form id="login-form" novalidate><p class="eyebrow">Secure account access</p><h2>Welcome back</h2><p class="muted">Sign in to continue to your mobility workspace.</p><label>Email address<input name="email" type="email" autocomplete="email" inputmode="email" required></label><label>Password<span class="password-field"><input name="password" type="password" autocomplete="current-password" required minlength="8"><button class="icon-button" data-toggle-password type="button" aria-label="Show password">Show</button></span></label><button class="link-button" id="forgot-password" type="button">Forgot password?</button><button class="primary-button" type="submit">Sign in <span aria-hidden="true">→</span></button></form>
+        <form id="register-form" hidden novalidate><p class="eyebrow">Create your workspace</p><h2>Get started</h2><p class="muted">Set up your personal ECHO-ASSIST account.</p><label>Full name<input name="full_name" autocomplete="name" required maxlength="120"></label><label>Email address<input name="email" type="email" autocomplete="email" inputmode="email" required></label><label>Password<span class="password-field"><input name="password" type="password" autocomplete="new-password" required minlength="8"><button class="icon-button" data-toggle-password type="button" aria-label="Show password">Show</button></span></label><label>Confirm password<input name="confirm_password" type="password" autocomplete="new-password" required minlength="8"></label><label>Preferred language<select name="preferred_language"><option value="en">English</option><option value="hi">Hindi</option><option value="te">Telugu</option></select></label><button class="primary-button" type="submit">Create account <span aria-hidden="true">→</span></button></form>
+        <form id="reset-form" hidden novalidate><p class="eyebrow">Account recovery</p><h2>Reset password</h2><p class="muted">Choose a new password for this one-time link.</p><label>New password<input name="new_password" type="password" autocomplete="new-password" required minlength="8"></label><button class="primary-button" type="submit">Reset password</button></form>
+        <form id="verify-form" hidden novalidate><p class="eyebrow">Email verification</p><h2>Confirm your email</h2><p class="muted">Confirm that you want to verify this address.</p><button class="primary-button" type="submit">Verify email address</button></form>
       </section>
     </main>
   </div>
 
   <div id="app-shell" class="app-shell" hidden>
     <aside class="sidebar" aria-label="Primary navigation">
-      <a class="sidebar-brand" href="#dashboard"><span class="logo-mark">EA</span><span>ECHO-ASSIST <small>AI</small></span></a>
+      <div class="sidebar-top"><a class="sidebar-brand" href="#dashboard" aria-label="ECHO-ASSIST AI dashboard"><span class="logo-mark" aria-hidden="true"><i></i></span><span>ECHO-ASSIST <small>AI</small></span></a><button id="close-menu-button" class="close-menu-button" type="button" aria-label="Close navigation">×</button></div>
       <nav id="sidebar-nav">
-        <button data-page="dashboard" class="active" type="button">▦ <span>Dashboard</span></button>
-        <button data-page="monitoring" type="button">⌁ <span>Live monitoring</span></button>
-        <button data-page="detection" type="button">◉ <span>AI obstacle detection</span></button>
-        <button data-page="risk" type="button">△ <span>Risk prediction</span></button>
-        <button data-page="navigation" type="button">⌖ <span>Navigation</span></button>
-        <button data-page="sos" type="button">! <span>Emergency SOS</span></button>
-        <button data-page="contacts" type="button">♧ <span>Emergency contacts</span></button>
-        <button data-page="devices" type="button">⌁ <span>Device management</span></button>
-        <button data-page="sensors" type="button">≋ <span>Sensor history</span></button>
-        <button data-page="notifications" type="button">◌ <span>Notifications</span></button>
-        <button data-page="profile" type="button">☺ <span>User profile</span></button>
-        <button data-page="settings" type="button">⚙ <span>Settings</span></button>
+        <p class="nav-label">Overview</p><button data-page="dashboard" class="active" type="button"><span class="nav-icon" aria-hidden="true">D</span><span>Dashboard</span></button>
+        <p class="nav-label">Awareness</p><button data-page="monitoring" type="button"><span class="nav-icon" aria-hidden="true">M</span><span>Smart cane monitor</span></button><button data-page="detection" type="button"><span class="nav-icon" aria-hidden="true">O</span><span>Obstacle detection</span></button><button data-page="risk" type="button"><span class="nav-icon" aria-hidden="true">R</span><span>AI risk prediction</span></button><button data-page="navigation" type="button"><span class="nav-icon" aria-hidden="true">N</span><span>Navigation</span></button>
+        <p class="nav-label">Safety &amp; data</p><button data-page="sos" class="sos-nav" type="button"><span class="nav-icon" aria-hidden="true">!</span><span>Emergency SOS</span></button><button data-page="contacts" type="button"><span class="nav-icon" aria-hidden="true">C</span><span>Emergency contacts</span></button><button data-page="notifications" type="button"><span class="nav-icon" aria-hidden="true">A</span><span>Alerts &amp; history</span></button><button data-page="sensors" type="button"><span class="nav-icon" aria-hidden="true">S</span><span>Sensor history</span></button><button data-page="analytics" type="button"><span class="nav-icon" aria-hidden="true">G</span><span>Reports &amp; analytics</span></button>
+        <p class="nav-label">Account</p><button data-page="devices" type="button"><span class="nav-icon" aria-hidden="true">H</span><span>Device &amp; settings</span></button><button data-page="profile" type="button"><span class="nav-icon" aria-hidden="true">P</span><span>User profile</span></button><button data-page="settings" type="button"><span class="nav-icon" aria-hidden="true">T</span><span>Accessibility settings</span></button>
       </nav>
-      <button id="logout-button" class="logout-button" type="button">⇥ <span>Logout</span></button>
+      <div class="sidebar-footer"><button id="sidebar-profile" data-page="profile" class="sidebar-profile" type="button"><span id="sidebar-initial" class="avatar">E</span><span><strong id="sidebar-name">Your account</strong><small>Manage profile</small></span></button><button id="logout-button" class="logout-button" type="button"><span aria-hidden="true">↗</span><span>Sign out</span></button></div>
     </aside>
-    <main class="workspace">
-      <header class="topbar"><button id="menu-button" class="menu-button" type="button" aria-label="Open navigation">☰</button><div><p class="eyebrow" id="page-kicker">Workspace</p><h1 id="page-title">Dashboard</h1></div><div class="account-chip"><span id="account-initial">E</span><div><strong id="account-name">Loading…</strong><small id="account-email"></small></div></div></header>
-      <section id="page-content" class="page-content" aria-live="polite"></section>
-    </main>
+    <main class="workspace"><header class="topbar"><button id="menu-button" class="menu-button" type="button" aria-label="Open navigation" aria-expanded="false"><span></span><span></span><span></span></button><div class="page-identity"><p class="eyebrow" id="page-kicker">Overview</p><h1 id="page-title">Dashboard</h1></div><div class="topbar-actions"><p id="today-date" class="today-date" aria-label="Current date"></p><button id="top-notifications" data-page="notifications" class="round-button" type="button" aria-label="Open alerts and history">●</button><span id="device-status" class="connection-chip"><i></i><span>Checking device</span></span><button id="top-profile" data-page="profile" class="account-chip" type="button" aria-label="Open user profile"><span id="account-initial" class="avatar">E</span><span class="account-name-wrap"><strong id="account-name">Loading</strong><small id="account-email"></small></span></button></div></header><section id="page-content" class="page-content" aria-live="polite"></section></main>
   </div>
+  <div id="nav-backdrop" class="nav-backdrop" hidden></div>
+  <dialog id="sos-dialog" class="sos-dialog" aria-labelledby="sos-dialog-title"><form method="dialog"><p class="eyebrow emergency-eyebrow">Emergency confirmation</p><h2 id="sos-dialog-title">Activate emergency SOS?</h2><p>This creates an emergency event and starts the configured notification attempts. Confirm only if help is needed.</p><div class="dialog-actions"><button value="cancel" class="secondary-button" type="submit">Not now</button><button id="confirm-sos" value="confirm" class="danger-button" type="submit">Activate SOS</button></div></form></dialog>
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <script src="/static/intro-3d.js"></script>
   <script src="/static/app.js"></script>
 </body>
 </html>
