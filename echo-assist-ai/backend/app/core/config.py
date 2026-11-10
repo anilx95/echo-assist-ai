@@ -33,6 +33,19 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "postgresql+psycopg://echo_assist:echo_assist@localhost:5432/echo_assist"
     DATABASE_CONNECT_TIMEOUT_SECONDS: int = 5
+    PORT: int = 8000
+
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def normalize_database_url(cls, value: object) -> object:
+        """Ensure postgres:// or postgresql:// URLs (e.g. from Railway) use psycopg 3 driver."""
+        if isinstance(value, str):
+            v = value.strip()
+            if v.startswith("postgres://"):
+                return "postgresql+psycopg://" + v[len("postgres://"):]
+            if v.startswith("postgresql://") and not v.startswith("postgresql+"):
+                return "postgresql+psycopg://" + v[len("postgresql://"):]
+        return value
 
     @field_validator("DEBUG", mode="before")
     @classmethod
