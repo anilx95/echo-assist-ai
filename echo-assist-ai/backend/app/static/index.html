@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/style.css?v=20261110d">
+  <link rel="stylesheet" href="/static/style.css?v=20261110e">
 </head>
 <body>
 
@@ -21,7 +21,7 @@
     <!-- Video Viewport Floating In Center -->
     <div class="video-viewport">
       <video id="intro-cane-video" playsinline autoplay muted preload="auto" disablepictureinpicture controlslist="nodownload nofullscreen noremoteplayback noplaybackrate">
-        <source src="/static/cane_intro.mp4?v=20261110d" type="video/mp4">
+        <source src="/static/cane_intro.mp4?v=20261110e" type="video/mp4">
         Your browser does not support video playback.
       </video>
     </div>
@@ -34,320 +34,17 @@
     </div>
   </section>
 
-  <!-- Floating Pill Navbar -->
-  <nav class="saas-nav" id="saas-nav" hidden>
-    <div class="nav-inner">
-      <a class="logo" href="#landing-top" aria-label="ECHO-ASSIST AI">
-        echo-assist<span>.</span>ai
-      </a>
-      <ul class="nav-links">
-        <li><a href="#features">Features</a></li>
-        <li><a href="#architecture">Architecture</a></li>
-        <li><a href="#pricing">Pricing</a></li>
-        <li><a href="#faq">FAQ</a></li>
-      </ul>
-      <div class="nav-actions">
-        <button id="nav-replay-btn" class="nav-ghost-btn" type="button">↺ Watch Intro</button>
-        <button id="nav-cta-btn" class="nav-cta" type="button">Launch App</button>
-      </div>
-    </div>
-  </nav>
-
-  <!-- Complete SaaS Platform Landing Page -->
-  <div id="saas-landing" class="saas-landing" hidden>
-    <!-- Hero Section -->
-    <section class="hero" id="landing-top">
-      <div class="hero-orb hero-orb-1"></div>
-      <div class="hero-orb hero-orb-2"></div>
-      <div class="hero-orb hero-orb-3"></div>
-      
-      <div class="hero-badge reveal">
-        <span class="dot"></span> Next-Gen Smart Cane for Inclusive Mobility
-      </div>
-      
-      <h1 class="reveal">
-        The Intelligent Mobility Platform <span class="gradient">For Safer Independence</span>
-      </h1>
-      
-      <p class="reveal">
-        Real-time edge YOLO obstacle detection, sub-50ms sensor fusion, spatial audio navigation, and automated emergency SOS in one unified SaaS ecosystem.
-      </p>
-      
-      <div class="hero-actions reveal">
-        <button id="hero-cta-btn" class="btn-glow" type="button">
-          Get started free <span aria-hidden="true">→</span>
-        </button>
-        <a href="#features" class="btn-ghost">Explore platform</a>
-        <button id="hero-replay-btn" class="btn-ghost" type="button">↺ Replay cane video</button>
-      </div>
-
-      <!-- Interactive Mockup Preview -->
-      <div class="hero-screenshot reveal">
-        <div class="screenshot-bar">
-          <div class="screenshot-dot" style="background:#ff5f57"></div>
-          <div class="screenshot-dot" style="background:#febc2e"></div>
-          <div class="screenshot-dot" style="background:#28c840"></div>
-          <span class="screenshot-title">ECHO-ASSIST AI · Cloud Telemetry &amp; Detection Workspace</span>
-        </div>
-        <div class="screenshot-content">
-          <div class="screenshot-sidebar">
-            <div class="screenshot-nav-item active"><i>●</i> Dashboard</div>
-            <div class="screenshot-nav-item"><i>⬡</i> Smart cane monitor</div>
-            <div class="screenshot-nav-item"><i>▲</i> Obstacle detection</div>
-            <div class="screenshot-nav-item"><i>◆</i> AI risk prediction</div>
-            <div class="screenshot-nav-item"><i>◈</i> Navigation engine</div>
-            <div class="screenshot-nav-item"><i>!</i> Emergency SOS</div>
-          </div>
-          <div class="screenshot-main">
-            <div class="mock-metrics">
-              <div class="mock-metric-card">
-                <small>Detection Latency</small>
-                <strong>38 ms</strong>
-              </div>
-              <div class="mock-metric-card">
-                <small>Hardware Status</small>
-                <strong style="color:var(--safe)">Connected (94%)</strong>
-              </div>
-              <div class="mock-metric-card">
-                <small>Live Risk Score</small>
-                <strong style="color:#a78bfa">SAFE (0.12)</strong>
-              </div>
-            </div>
-            <div class="mock-display-row">
-              <div class="mock-radar-box">
-                <div class="mock-radar-circle">
-                  <div class="mock-radar-sweep"></div>
-                  <div class="mock-radar-dot"></div>
-                </div>
-                <small style="margin-top:12px;color:var(--muted)">360° Real-Time Spatial Radar</small>
-              </div>
-              <div class="mock-stream-box">
-                <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--fg)">Continuous Scene Engine</div>
-                <p style="font-size:12px;color:var(--muted);text-align:center;margin-top:6px">YOLO11 object classification with fused ultrasonic + ToF range verification</p>
-                <span class="tag" style="margin-top:10px">YOLO11 Active</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Key Performance Stats -->
-    <section class="stats-bar">
-      <div class="stats-grid">
-        <div class="stat reveal">
-          <div class="stat-value"><span>99.9%</span></div>
-          <div class="stat-label">Detection Uptime SLA</div>
-        </div>
-        <div class="stat reveal">
-          <div class="stat-value"><span>&lt;50ms</span></div>
-          <div class="stat-label">Edge-to-Ear Latency</div>
-        </div>
-        <div class="stat reveal">
-          <div class="stat-value"><span>360°</span></div>
-          <div class="stat-label">Spatial Protection Arc</div>
-        </div>
-        <div class="stat reveal">
-          <div class="stat-value"><span>10k+</span></div>
-          <div class="stat-label">Active Protected Navigators</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Bento Features Section -->
-    <section class="section" id="features">
-      <div class="section-header reveal">
-        <span class="section-label">Core Capabilities</span>
-        <h2 class="section-title">Engineered for absolute safety</h2>
-        <p class="section-desc">Designed from first principles to provide intuitive, fast, and fail-safe spatial awareness for visually impaired individuals.</p>
-      </div>
-
-      <div class="bento">
-        <div class="bento-card wide reveal">
-          <div class="bento-icon" style="background:rgba(139,92,246,0.12);color:#a78bfa">⚡</div>
-          <h3>Sub-50ms Edge YOLO Detection</h3>
-          <p>Real-time on-device and edge computer vision powered by YOLO11, instantly categorizing obstacles, elevation hazards, and moving entities without latency compromises.</p>
-        </div>
-
-        <div class="bento-card reveal">
-          <div class="bento-icon" style="background:rgba(6,182,212,0.12);color:#22d3ee">🛡️</div>
-          <h3>Dual-Sensor Spatial Fusion</h3>
-          <p>Combines Ultrasonic distance reflection with Time-of-Flight (ToF) millimeter lasers to eliminate optical blindspots.</p>
-        </div>
-
-        <div class="bento-card reveal">
-          <div class="bento-icon" style="background:rgba(52,211,153,0.12);color:#34d399">📊</div>
-          <h3>Dynamic AI Risk Engine</h3>
-          <p>Calculates collision velocity vectors, generating tiered SAFE, WARNING, and DANGER alerts with zero sensory overload.</p>
-        </div>
-
-        <div class="bento-card wide reveal">
-          <div class="bento-icon" style="background:rgba(236,72,153,0.12);color:#f472b6">🛰️</div>
-          <h3>Live Caregiver Sync &amp; Emergency SOS</h3>
-          <p>Automated fall detection with countdown cancelation. Automatically dispatches multi-channel SMS and location alerts to verified guardians if assistance is needed.</p>
-        </div>
-
-        <div class="bento-card reveal">
-          <div class="bento-icon" style="background:rgba(245,158,11,0.12);color:#fbbf24">🗣️</div>
-          <h3>Multilingual Spatial Audio</h3>
-          <p>Crystal-clear auditory spatial cues in English, Hindi, and Telugu, seamlessly guiding users with gentle haptic and speech feedback.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- Architecture & Platform Tech Stack -->
-    <section class="section" id="architecture" style="background:var(--surface)">
-      <div class="section-header reveal">
-        <span class="section-label">System Architecture</span>
-        <h2 class="section-title">A complete end-to-end hardware &amp; AI stack</h2>
-        <p class="section-desc">From microsecond embedded sensors on the cane to cloud intelligence, every layer is built for resilience.</p>
-      </div>
-
-      <div class="bento">
-        <div class="bento-card reveal">
-          <div class="bento-icon" style="background:rgba(139,92,246,0.12);color:#a78bfa">1</div>
-          <h3>ESP32 Smart Cane Unit</h3>
-          <p>FreeRTOS firmware managing ToF laser ranging, ultrasonic echo, 6-axis IMU fall sensing, and Bluetooth Low Energy (BLE) pairing.</p>
-        </div>
-
-        <div class="bento-card reveal">
-          <div class="bento-icon" style="background:rgba(6,182,212,0.12);color:#22d3ee">2</div>
-          <h3>FastAPI Intelligence Hub</h3>
-          <p>High-throughput asynchronous backend managing sensor streams, live session histories, JWT authentication, and telemetry caching.</p>
-        </div>
-
-        <div class="bento-card reveal">
-          <div class="bento-icon" style="background:rgba(52,211,153,0.12);color:#34d399">3</div>
-          <h3>Caregiver Guardian Portal</h3>
-          <p>Instant browser and mobile dashboard giving guardians real-time visibility into route safety, battery health, and SOS statuses.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- Pricing Section -->
-    <section class="section" id="pricing">
-      <div class="section-header reveal">
-        <span class="section-label">Pricing</span>
-        <h2 class="section-title">Simple, transparent access</h2>
-        <p class="section-desc">Accessible pricing designed for independent individuals, care providers, and accessibility organizations.</p>
-      </div>
-
-      <div class="pricing">
-        <div class="pricing-cards">
-          <div class="price-card reveal">
-            <h3>Starter</h3>
-            <div class="price-amount">$0</div>
-            <p>Free forever for individual navigators</p>
-            <ul>
-              <li>Local BLE Smart Cane Connectivity</li>
-              <li>Basic Audio &amp; Haptic Obstacle Cues</li>
-              <li>1 Emergency Guardian Contact</li>
-              <li>7-Day Sensor Telemetry History</li>
-            </ul>
-            <button class="price-btn price-btn-outline" data-plan="starter" type="button">Get started free</button>
-          </div>
-
-          <div class="price-card featured reveal">
-            <span class="featured-badge">Most Popular</span>
-            <h3>Pro Mobility</h3>
-            <div class="price-amount">$29<small style="font-size:0.4em;font-weight:400;color:var(--muted)">/mo</small></div>
-            <p>For active independent commuters</p>
-            <ul>
-              <li>Sub-50ms Cloud AI Edge Inference</li>
-              <li>Full YOLO11 Object Classification</li>
-              <li>Unlimited Emergency Contacts</li>
-              <li>Automated Fall Detection &amp; SMS Dispatch</li>
-              <li>Multilingual Voice Navigation (EN/HI/TE)</li>
-              <li>Unlimited Sensor &amp; Route Telemetry</li>
-            </ul>
-            <button class="price-btn price-btn-primary" data-plan="pro" type="button">Start 14-day free trial</button>
-          </div>
-
-          <div class="price-card reveal">
-            <h3>Enterprise Care</h3>
-            <div class="price-amount">$99<small style="font-size:0.4em;font-weight:400;color:var(--muted)">/mo</small></div>
-            <p>For rehabilitation centers &amp; organizations</p>
-            <ul>
-              <li>Multi-User Smart Cane Fleet Management</li>
-              <li>Dedicated Low-Latency Inference Edge</li>
-              <li>Centralized Caregiver Monitoring Console</li>
-              <li>Comprehensive Analytics &amp; Incident Reports</li>
-              <li>Full REST &amp; WebSocket API Access</li>
-            </ul>
-            <button class="price-btn price-btn-outline" data-plan="enterprise" type="button">Contact sales</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- FAQ Section -->
-    <section class="section" id="faq" style="background:var(--surface)">
-      <div class="section-header reveal">
-        <span class="section-label">FAQ</span>
-        <h2 class="section-title">Frequently asked questions</h2>
-      </div>
-
-      <div class="faq-list">
-        <details class="faq-item reveal">
-          <summary>How does ECHO-ASSIST connect to the smart cane?</summary>
-          <p>The system connects via Bluetooth Low Energy (BLE 5.0) to the onboard ESP32 controller. Sensor packets (ultrasonic, ToF laser, battery, accelerometer) are transmitted with sub-50ms latency.</p>
-        </details>
-        <details class="faq-item reveal">
-          <summary>Can the platform function offline or with poor connectivity?</summary>
-          <p>Yes. The smart cane maintains local haptic vibration and proximity buzzer alerts autonomously on the ESP32 hardware, even when internet connection drops.</p>
-        </details>
-        <details class="faq-item reveal">
-          <summary>What languages are supported for voice assistance?</summary>
-          <p>ECHO-ASSIST AI supports native natural language TTS and voice guidance in English, Hindi, and Telugu, with additional regional languages continuously in development.</p>
-        </details>
-        <details class="faq-item reveal">
-          <summary>How does the emergency fall detection system work?</summary>
-          <p>The 6-axis IMU accelerometer identifies sudden freefall and impact dynamics. A configurable countdown (default 30s) allows the user to cancel false alarms before automatic SMS and phone calls dispatch to registered guardians.</p>
-        </details>
-        <details class="faq-item reveal">
-          <summary>Is patient and location data secure?</summary>
-          <p>Yes. All communication uses TLS 1.3 encryption, database credentials and passwords are salt-hashed, and user sessions adhere to strict account-level scoping.</p>
-        </details>
-      </div>
-    </section>
-
-    <!-- Bottom CTA Box -->
-    <section class="cta-section" id="cta">
-      <div class="cta-box reveal">
-        <h2>Ready to experience fearless mobility?</h2>
-        <p>Join thousands of users and caregivers who trust ECHO-ASSIST AI for daily independent navigation.</p>
-        <form class="cta-form" id="landing-email-form">
-          <input type="email" id="landing-email-input" placeholder="Enter your email" required>
-          <button type="submit">Get started</button>
-        </form>
-      </div>
-    </section>
-
-    <!-- Modern Footer -->
-    <footer>
-      <div class="footer-inner">
-        <p>&copy; 2026 ECHO-ASSIST AI. All rights reserved.</p>
-        <div class="footer-links">
-          <a href="#features">Features</a>
-          <a href="#pricing">Pricing</a>
-          <a href="/docs" target="_blank">API Docs</a>
-          <a href="#faq">FAQ</a>
-        </div>
-      </div>
-    </footer>
-  </div>
 
   <!-- Authentication Full Screen View (Matches attached image, 1920x1080) -->
   <div id="auth-shell" class="auth-shell" hidden>
     <div class="auth-orb auth-orb-one" aria-hidden="true"></div>
     <div class="auth-orb auth-orb-two" aria-hidden="true"></div>
     <main class="auth-card" aria-labelledby="auth-heading">
-      <button id="close-auth-btn" class="close-auth-btn" type="button" aria-label="Close and return to website" title="Back to website">✕</button>
       <section class="auth-brand">
-        <a class="brand-lockup" href="#landing-top" aria-label="ECHO-ASSIST AI home">
+        <div class="brand-lockup" aria-label="ECHO-ASSIST AI">
           <span class="logo-mark" aria-hidden="true"><i></i></span>
           <span>ECHO-ASSIST <small>AI</small></span>
-        </a>
+        </div>
         <p class="eyebrow">SMART CANE PLATFORM</p>
         <h1 id="auth-heading">Move with absolute confidence.</h1>
         <p class="auth-lede">One private workspace for your smart cane telemetry, awareness tools, and emergency support network.</p>
@@ -578,6 +275,6 @@
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
   <script src="/static/intro-3d.js"></script>
-  <script src="/static/app.js?v=20261110d"></script>
+  <script src="/static/app.js?v=20261110e"></script>
 </body>
 </html>

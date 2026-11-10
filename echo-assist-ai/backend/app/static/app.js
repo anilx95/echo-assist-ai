@@ -136,8 +136,6 @@ function playVideoIntro() {
   hideIntro();
   const authShell = $('#auth-shell'); if (authShell) authShell.hidden = true;
   const appShell = $('#app-shell'); if (appShell) appShell.hidden = true;
-  const landing = $('#saas-landing'); if (landing) landing.hidden = true;
-  const nav = $('#saas-nav'); if (nav) nav.hidden = true;
 
   const shell = $('#video-intro-shell');
   if (!shell) {
@@ -171,28 +169,15 @@ function setAuthTab(mode) {
   $('#reset-form').hidden = true; $('#verify-form').hidden = true;
 }
 function showLanding() {
-  hideIntro();
-  hideVideoIntro();
-  const authShell = $('#auth-shell'); if (authShell) authShell.hidden = true;
-  const appShell = $('#app-shell'); if (appShell) appShell.hidden = true;
-  const landing = $('#saas-landing'); if (landing) landing.hidden = false;
-  const nav = $('#saas-nav'); if (nav) nav.hidden = false;
-  const navCta = $('#nav-cta-btn');
-  if (navCta) navCta.textContent = state.accessToken ? 'Go to Workspace' : 'Launch App';
-  requestAnimationFrame(() => {
-    document.querySelectorAll('.reveal').forEach(el => {
-      const rect = el.getBoundingClientRect();
-      if (rect.top < window.innerHeight + 250 || el.closest('.hero')) {
-        el.classList.add('visible');
-      }
-    });
-  });
+  if (state.accessToken) {
+    showApp();
+  } else {
+    showAuth('login');
+  }
 }
 function showAuth(mode = 'login') {
   hideIntro();
   hideVideoIntro();
-  const landing = $('#saas-landing'); if (landing) landing.hidden = true;
-  const nav = $('#saas-nav'); if (nav) nav.hidden = true;
   $('#app-shell').classList.remove('is-preloading');
   $('#app-shell').hidden = true;
   $('#auth-shell').hidden = false;
@@ -215,8 +200,6 @@ function setDeviceStatus(devices) {
 function showApp() {
   hideIntro();
   hideVideoIntro();
-  const landing = $('#saas-landing'); if (landing) landing.hidden = true;
-  const nav = $('#saas-nav'); if (nav) nav.hidden = true;
   $('#auth-shell').hidden = true;
   $('#app-shell').hidden = false;
   $('#app-shell').classList.remove('is-preloading');
@@ -228,16 +211,12 @@ async function finishAuthentication(tokens) {
   location.hash = 'dashboard'; showApp();
 }
 async function bootstrap() {
-  if (!state.accessToken) return showLanding();
+  if (!state.accessToken) return showAuth('login');
   try {
     state.user = await api('/user/profile');
-    if (location.hash && location.hash.length > 1 && location.hash !== '#landing-top') {
-      showApp();
-    } else {
-      showLanding();
-    }
+    showApp();
   } catch (_) {
-    showLanding();
+    showAuth('login');
   }
 }
 function prepareNextScreen() {
@@ -560,24 +539,17 @@ $('#close-menu-button').onclick = () => { $('#app-shell').classList.remove('nav-
 $('#nav-backdrop').onclick = () => $('#close-menu-button').click();
 $('#sos-dialog').addEventListener('close', () => { if ($('#sos-dialog').returnValue === 'confirm') activateSos(); });
 $('#logout-button').onclick = async () => { try { if (state.refreshToken) await api('/auth/logout', { method: 'POST', body: JSON.stringify({ refresh_token: state.refreshToken }) }); } finally { clearSession(); showAuth(); notify('You have been signed out.'); } };
-const closeAuth = $('#close-auth-btn'); if (closeAuth) closeAuth.onclick = () => { if (state.accessToken) showApp(); else showLanding(); };
 document.querySelectorAll('.brand-lockup').forEach(b => {
   b.onclick = e => {
     e.preventDefault();
-    if (state.accessToken) showApp(); else showLanding();
+    if (state.accessToken) showApp(); else showAuth('login');
   };
 });
-const sidebarLanding = $('#sidebar-landing-btn'); if (sidebarLanding) sidebarLanding.onclick = () => showLanding();
-const handleCta = () => { if (state.accessToken) showApp(); else showAuth('register'); };
-const navCta = $('#nav-cta-btn'); if (navCta) navCta.onclick = handleCta;
-const heroCta = $('#hero-cta-btn'); if (heroCta) heroCta.onclick = handleCta;
 
 const play3dIntro = () => {
   hideIntro();
   const authShell = $('#auth-shell'); if (authShell) authShell.hidden = true;
   const appShell = $('#app-shell'); if (appShell) appShell.hidden = true;
-  const landing = $('#saas-landing'); if (landing) landing.hidden = true;
-  const nav = $('#saas-nav'); if (nav) nav.hidden = true;
   $('#intro-shell').hidden = false;
   if (window.EchoCinematicIntro) {
     state.introController = new window.EchoCinematicIntro($('#intro-shell'), {
@@ -588,23 +560,6 @@ const play3dIntro = () => {
     state.introController.start();
   }
 };
-const nav3d = $('#nav-3d-btn'); if (nav3d) nav3d.onclick = play3dIntro;
-const hero3d = $('#hero-3d-btn'); if (hero3d) hero3d.onclick = play3dIntro;
-
-const emailForm = $('#landing-email-form');
-if (emailForm) {
-  emailForm.onsubmit = event => {
-    event.preventDefault();
-    const email = $('#landing-email-input')?.value.trim();
-    showAuth('register');
-    const regEmail = $('#register-form')?.querySelector('input[name="email"]');
-    if (regEmail && email) regEmail.value = email;
-  };
-}
-
-document.querySelectorAll('[data-plan]').forEach(button => {
-  button.onclick = () => showAuth('register');
-});
 
 const revealObserver = new IntersectionObserver(entries => {
   entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
