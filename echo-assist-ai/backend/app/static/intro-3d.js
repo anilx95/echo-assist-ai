@@ -76,19 +76,29 @@
   }
   function shape(builder) { const vertices = [], colors = []; builder(vertices, colors); return { vertices: new Float32Array(vertices), colors: new Float32Array(colors) }; }
   function partGeometries() {
-    const metal = [.62, .81, .96], dark = [.06, .17, .31], blue = [.04, .42, .68], cyan = [.03, .86, 1.];
+    const metal = [.86, .84, .96], dark = [.04, .05, .09], purple = [.55, .36, .96], cyan = [.02, .71, .83];
     return {
-      shaft: shape((v, c) => { addCylinder(v, c, [0, -1.05, 0], [0, 1.05, 0], .065, metal, 12); addCylinder(v, c, [0, .25, 0], [0, .34, 0], .082, blue, 12); }),
+      shaft: shape((v, c) => { addCylinder(v, c, [0, -1.05, 0], [0, 1.05, 0], .065, metal, 12); addCylinder(v, c, [0, .25, 0], [0, .34, 0], .082, purple, 12); }),
       handle: shape((v, c) => { addCylinder(v, c, [0, -.27, 0], [-.10, .07, 0], .115, dark, 12); addCylinder(v, c, [-.10, .07, 0], [.12, .30, 0], .135, dark, 12); addCylinder(v, c, [.12, .30, 0], [.42, .22, 0], .14, dark, 12); }),
-      control: shape((v, c) => { addBox(v, c, [0, 0, 0], [.23, .48, .21], [.04, .30, .48]); addCylinder(v, c, [0, .12, .12], [0, .12, .16], .054, cyan, 10); addCylinder(v, c, [0, -.12, .12], [0, -.12, .16], .045, blue, 10); }),
+      control: shape((v, c) => { addBox(v, c, [0, 0, 0], [.23, .48, .21], [.07, .09, .16]); addCylinder(v, c, [0, .12, .12], [0, .12, .16], .054, cyan, 10); addCylinder(v, c, [0, -.12, .12], [0, -.12, .16], .045, purple, 10); }),
       ultrasonic: shape((v, c) => { addBox(v, c, [0, 0, 0], [.18, .11, .10], dark); addCylinder(v, c, [0, 0, .05], [0, 0, .09], .047, cyan, 10); }),
-      tof: shape((v, c) => { addBox(v, c, [0, 0, 0], [.15, .10, .09], dark); addCylinder(v, c, [0, 0, .045], [0, 0, .082], .036, blue, 10); }),
+      tof: shape((v, c) => { addBox(v, c, [0, 0, 0], [.15, .10, .09], dark); addCylinder(v, c, [0, 0, .045], [0, 0, .082], .036, purple, 10); }),
       tip: shape((v, c) => { addCylinder(v, c, [0, -.09, 0], [0, .09, 0], .105, dark, 12); addCylinder(v, c, [0, .06, 0], [0, .10, 0], .075, metal, 12); }),
     };
   }
   function particleGeometry(count) {
     const positions = new Float32Array(count * 3), colors = new Float32Array(count * 3);
-    for (let index = 0; index < count; index += 1) { const base = index * 3, radius = 1.1 + Math.random() * 3.5, angle = Math.random() * Math.PI * 2; positions[base] = Math.cos(angle) * radius; positions[base + 1] = (Math.random() - .5) * 3.8; positions[base + 2] = Math.sin(angle) * 1.3; const blue = .62 + Math.random() * .38; colors[base] = .08; colors[base + 1] = blue; colors[base + 2] = 1; }
+    for (let index = 0; index < count; index += 1) {
+      const base = index * 3, radius = 1.1 + Math.random() * 3.5, angle = Math.random() * Math.PI * 2;
+      positions[base] = Math.cos(angle) * radius;
+      positions[base + 1] = (Math.random() - .5) * 3.8;
+      positions[base + 2] = Math.sin(angle) * 1.3;
+      if (Math.random() > .4) {
+        colors[base] = .55; colors[base + 1] = .36; colors[base + 2] = .96; // Purple glow
+      } else {
+        colors[base] = .02; colors[base + 1] = .71; colors[base + 2] = .83; // Cyan glow
+      }
+    }
     return { vertices: positions, colors };
   }
   function makeMesh(gl, geometry) { const position = gl.createBuffer(), color = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, position); gl.bufferData(gl.ARRAY_BUFFER, geometry.vertices, gl.STATIC_DRAW); gl.bindBuffer(gl.ARRAY_BUFFER, color); gl.bufferData(gl.ARRAY_BUFFER, geometry.colors, gl.STATIC_DRAW); return { position, color, count: geometry.vertices.length / 3 }; }

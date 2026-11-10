@@ -100,6 +100,21 @@ def send_sensor_packet(token, packet):
     return response
 
 
+def ensure_device_registered(token):
+    response = httpx.post(
+        f"{BASE_URL}/devices",
+        json={
+            "device_id": DEVICE_ID,
+            "device_name": "ECHO-CANE Simulator",
+            "is_simulator": True,
+        },
+        headers={"Authorization": f"Bearer {token}"},
+        timeout=10,
+    )
+    if response.status_code not in (201, 409):
+        response.raise_for_status()
+
+
 def main():
 
     print("=" * 50)
@@ -119,6 +134,12 @@ def main():
     print("\nDevice:", DEVICE_ID)
     print("Backend:", BASE_URL)
     print("Status: CONNECTED")
+
+    try:
+        ensure_device_registered(token)
+    except Exception as error:
+        print("Could not register simulator device:", error)
+        return
     print("\nSending sensor data...\n")
 
 

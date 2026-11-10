@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/routes/route_names.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../services/storage_service.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -42,17 +43,17 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
 
-    return Scaffold(
-      backgroundColor: Colors.black,
+    return const Scaffold(
+      backgroundColor: AppColors.background,
       body: Center(
         child: Column(
           mainAxisAlignment:
               MainAxisAlignment.center,
           children: [
 
-            const Icon(
+            Icon(
               Icons.visibility,
-              color: Colors.blue,
+              color: AppColors.primary,
               size: 90,
             ),
 

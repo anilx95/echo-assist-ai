@@ -1,9 +1,7 @@
-import 'dart:convert';
-
-import 'package:http/http.dart' as http;
-
 import '../core/constants/api_constants.dart';
 import '../models/user_model.dart';
+import 'api_service.dart';
+import 'storage_service.dart';
 
 class AuthService {
   // ==========================
@@ -13,65 +11,34 @@ class AuthService {
     required String email,
     required String password,
   }) async {
-    final response = await http.post(
-      Uri.parse(
-        ApiConstants.baseUrl +
-            ApiConstants.login,
-      ),
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: jsonEncode({
-        "email": email,
-        "password": password,
-      }),
+    final response = await ApiService.instance.post(
+      ApiConstants.login,
+      data: {'email': email, 'password': password},
+      authenticate: false,
     );
-
-    if (response.statusCode == 200) {
-      return UserModel.fromJson(
-        jsonDecode(response.body),
-      );
-    }
-
-    throw Exception(
-      "Login Failed\n${response.body}",
-    );
+    return UserModel.fromJson(Map<String, dynamic>.from(response.data as Map));
   }
 
   // ==========================
   // REGISTER
   // ==========================
-  Future<void> register({
+  Future<UserModel> register({
     required String fullName,
     required String email,
     required String password,
     required String preferredLanguage,
   }) async {
-    final response = await http.post(
-      Uri.parse(
-        ApiConstants.baseUrl +
-            ApiConstants.register,
-      ),
-      headers: {
-        "Content-Type": "application/json",
+    final response = await ApiService.instance.post(
+      ApiConstants.register,
+      data: {
+        'full_name': fullName,
+        'email': email,
+        'password': password,
+        'preferred_language': preferredLanguage,
       },
-      body: jsonEncode({
-        "full_name": fullName,
-        "email": email,
-        "password": password,
-        "preferred_language":
-            preferredLanguage,
-      }),
+      authenticate: false,
     );
-
-    if (response.statusCode == 200 ||
-        response.statusCode == 201) {
-      return;
-    }
-
-    throw Exception(
-      "Registration Failed\n${response.body}",
-    );
+    return UserModel.fromJson(Map<String, dynamic>.from(response.data as Map));
   }
 
   // ==========================
@@ -80,27 +47,27 @@ class AuthService {
   Future<UserModel> refreshToken({
     required String refreshToken,
   }) async {
-    final response = await http.post(
-      Uri.parse(
-        ApiConstants.baseUrl +
-            ApiConstants.refresh,
-      ),
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: jsonEncode({
-        "refresh_token": refreshToken,
-      }),
+    final response = await ApiService.instance.post(
+      ApiConstants.refresh,
+      data: {'refresh_token': refreshToken},
+      authenticate: false,
     );
+    return UserModel.fromJson(Map<String, dynamic>.from(response.data as Map));
+  }
 
-    if (response.statusCode == 200) {
-      return UserModel.fromJson(
-        jsonDecode(response.body),
-      );
+  Future<void> logout() async {
+    final refreshToken = await StorageService.instance.getRefreshToken();
+    if (refreshToken != null) {
+      try {
+        await ApiService.instance.post(
+          ApiConstants.logout,
+          data: {'refresh_token': refreshToken},
+          authenticate: false,
+        );
+      } on ApiException {
+        // Local token removal is still required when the server is unreachable.
+      }
     }
-
-    throw Exception(
-      "Refresh Token Failed\n${response.body}",
-    );
+    await StorageService.instance.logout();
   }
 }

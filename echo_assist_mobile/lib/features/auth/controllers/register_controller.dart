@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/routes/route_names.dart';
 import '../../../services/auth_service.dart';
+import '../../../services/storage_service.dart';
 
 class RegisterController {
   final AuthService _authService =
@@ -14,7 +16,7 @@ class RegisterController {
     required String language,
   }) async {
     try {
-      await _authService.register(
+      final tokens = await _authService.register(
         fullName: fullName,
         email: email,
         password: password,
@@ -23,16 +25,14 @@ class RegisterController {
 
       if (!context.mounted) return;
 
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-        const SnackBar(
-          content: Text(
-            "Registration Successful",
-          ),
-        ),
+      await StorageService.instance.saveToken(tokens.accessToken);
+      await StorageService.instance.saveRefreshToken(tokens.refreshToken);
+      if (!context.mounted) return;
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        RouteNames.home,
+        (route) => false,
       );
-
-      Navigator.pop(context);
     } catch (e) {
       if (!context.mounted) return;
 

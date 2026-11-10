@@ -1,31 +1,40 @@
-version: "3.9"
-
 services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-echo_assist}
+      POSTGRES_USER: ${POSTGRES_USER:-echo_assist}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+    volumes:
+      - echo_assist_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
   backend:
     build:
-      context: ./backend
-    container_name: echo-assist-backend
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
     ports:
       - "8000:8000"
     env_file:
       - ./backend/.env
-    volumes:
-      - ./backend:/app
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-echo_assist}:${POSTGRES_PASSWORD:-change-me}@db:5432/${POSTGRES_DB:-echo_assist}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:8000,http://127.0.0.1:8000,http://localhost:3000,http://localhost:8080}
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
-  # Uncomment when moving from SQLite to PostgreSQL for production.
-  # db:
-  #   image: postgres:16-alpine
-  #   container_name: echo-assist-db
-  #   restart: unless-stopped
-  #   environment:
-  #     POSTGRES_USER: echo_assist
-  #     POSTGRES_PASSWORD: change-me
-  #     POSTGRES_DB: echo_assist
-  #   ports:
-  #     - "5432:5432"
-  #   volumes:
-  #     - echo_assist_db_data:/var/lib/postgresql/data
-
-# volumes:
-#   echo_assist_db_data:
+volumes:
+  echo_assist_postgres_data:

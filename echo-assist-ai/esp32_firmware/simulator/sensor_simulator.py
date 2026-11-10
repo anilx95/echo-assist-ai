@@ -122,6 +122,13 @@ def run(
     headers = {"Authorization": f"Bearer {token}"}
 
     with httpx.Client(base_url=backend_url, timeout=5.0) as client:
+        registration = client.post(
+            "/devices",
+            json={"device_id": DEVICE_ID, "device_name": "ECHO-CANE Simulator", "is_simulator": True},
+            headers=headers,
+        )
+        if registration.status_code not in (201, 409):
+            raise RuntimeError(f"Unable to register simulator device: {registration.status_code} {registration.text}")
         for i in range(count):
             active_scenario = random.choice(SCENARIOS) if scenario == "random" else scenario
             packet = generate_packet(active_scenario, state)

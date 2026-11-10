@@ -1,0 +1,14 @@
+backend/.env
+backend/venv/
+backend/__pycache__/
+backend/*.py[cod]
+backend/.pytest_cache/
+backend/*.db
+backend/test_echo_assist.db
+backend/phase3_validation.db
+.git
+.github
+mobile/
+esp32_firmware/
+docs/
+

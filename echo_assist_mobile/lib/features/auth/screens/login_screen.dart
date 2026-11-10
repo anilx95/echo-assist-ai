@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/routes/route_names.dart';
+import '../../../core/theme/app_colors.dart';
 import '../controllers/login_controller.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -43,7 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const Icon(
                 Icons.visibility,
                 size: 90,
-                color: Colors.blue,
+                color: AppColors.primary,
               ),
 
               const SizedBox(height: 20),

@@ -88,6 +88,81 @@ async function api(path, options = {}, retried = false) {
 async function optional(path) { try { return await api(path); } catch (error) { return { _error: error.message }; } }
 
 function hideIntro() { $('#intro-shell').hidden = true; }
+function hideVideoIntro() {
+  const shell = $('#video-intro-shell');
+  if (shell) {
+    shell.classList.remove('is-leaving');
+    shell.hidden = true;
+  }
+}
+function finishVideoIntro() {
+  const shell = $('#video-intro-shell');
+  const video = $('#intro-cane-video');
+  if (video) {
+    try { video.pause(); } catch (_) {}
+  }
+  const proceed = () => {
+    if (state.accessToken) {
+      showApp();
+    } else {
+      showAuth('login');
+    }
+  };
+  if (!shell || shell.hidden) {
+    proceed();
+    return;
+  }
+  // Smooth cinematic cross-fade: start intro fade-out and login card fade-in concurrently
+  shell.classList.add('is-leaving');
+  if (!state.accessToken) {
+    const authShell = $('#auth-shell');
+    if (authShell) {
+      authShell.hidden = false;
+      authShell.classList.add('is-entering');
+      setAuthTab('login');
+      void authShell.offsetHeight; // Force reflow
+      requestAnimationFrame(() => {
+        authShell.classList.remove('is-entering');
+      });
+    }
+  }
+  setTimeout(() => {
+    shell.hidden = true;
+    shell.classList.remove('is-leaving');
+    proceed();
+  }, 600);
+}
+function playVideoIntro() {
+  hideIntro();
+  const authShell = $('#auth-shell'); if (authShell) authShell.hidden = true;
+  const appShell = $('#app-shell'); if (appShell) appShell.hidden = true;
+  const landing = $('#saas-landing'); if (landing) landing.hidden = true;
+  const nav = $('#saas-nav'); if (nav) nav.hidden = true;
+
+  const shell = $('#video-intro-shell');
+  if (!shell) {
+    showAuth('register');
+    return;
+  }
+  shell.hidden = false;
+  shell.classList.remove('is-leaving');
+
+  const video = $('#intro-cane-video');
+  if (video) {
+    try { video.currentTime = 0; } catch (_) {}
+
+    video.onended = () => {
+      finishVideoIntro();
+    };
+
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(err => {
+        console.warn('Autoplay waiting for user interaction:', err);
+      });
+    }
+  }
+}
 function setAuthTab(mode) {
   const login = mode === 'login';
   $('#login-tab').classList.toggle('active', login); $('#register-tab').classList.toggle('active', !login);
@@ -95,7 +170,35 @@ function setAuthTab(mode) {
   $('#login-form').hidden = !login; $('#register-form').hidden = login;
   $('#reset-form').hidden = true; $('#verify-form').hidden = true;
 }
-function showAuth() { hideIntro(); $('#app-shell').classList.remove('is-preloading'); $('#app-shell').hidden = true; $('#auth-shell').hidden = false; $('#auth-shell').classList.remove('is-entering'); setAuthTab('login'); }
+function showLanding() {
+  hideIntro();
+  hideVideoIntro();
+  const authShell = $('#auth-shell'); if (authShell) authShell.hidden = true;
+  const appShell = $('#app-shell'); if (appShell) appShell.hidden = true;
+  const landing = $('#saas-landing'); if (landing) landing.hidden = false;
+  const nav = $('#saas-nav'); if (nav) nav.hidden = false;
+  const navCta = $('#nav-cta-btn');
+  if (navCta) navCta.textContent = state.accessToken ? 'Go to Workspace' : 'Launch App';
+  requestAnimationFrame(() => {
+    document.querySelectorAll('.reveal').forEach(el => {
+      const rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight + 250 || el.closest('.hero')) {
+        el.classList.add('visible');
+      }
+    });
+  });
+}
+function showAuth(mode = 'login') {
+  hideIntro();
+  hideVideoIntro();
+  const landing = $('#saas-landing'); if (landing) landing.hidden = true;
+  const nav = $('#saas-nav'); if (nav) nav.hidden = true;
+  $('#app-shell').classList.remove('is-preloading');
+  $('#app-shell').hidden = true;
+  $('#auth-shell').hidden = false;
+  $('#auth-shell').classList.remove('is-entering');
+  setAuthTab(mode);
+}
 function displayDate() { $('#today-date').textContent = new Date().toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' }); }
 function updateAccountChrome() {
   const name = state.user?.full_name || 'ECHO-ASSIST user'; const email = state.user?.email || '';
@@ -109,14 +212,33 @@ function setDeviceStatus(devices) {
   chip.classList.toggle('connected', connected); chip.classList.toggle('disconnected', Array.isArray(devices) && !connected);
   chip.querySelector('span').textContent = connected ? 'Device connected' : 'Device disconnected';
 }
-function showApp() { hideIntro(); $('#auth-shell').hidden = true; $('#app-shell').hidden = false; $('#app-shell').classList.remove('is-preloading'); updateAccountChrome(); renderPage(); }
+function showApp() {
+  hideIntro();
+  hideVideoIntro();
+  const landing = $('#saas-landing'); if (landing) landing.hidden = true;
+  const nav = $('#saas-nav'); if (nav) nav.hidden = true;
+  $('#auth-shell').hidden = true;
+  $('#app-shell').hidden = false;
+  $('#app-shell').classList.remove('is-preloading');
+  updateAccountChrome();
+  renderPage();
+}
 async function finishAuthentication(tokens) {
   saveTokens(tokens); state.user = await api('/user/profile'); state.page = 'dashboard';
   location.hash = 'dashboard'; showApp();
 }
 async function bootstrap() {
-  if (!state.accessToken) return showAuth();
-  try { state.user = await api('/user/profile'); showApp(); } catch (_) { showAuth(); }
+  if (!state.accessToken) return showLanding();
+  try {
+    state.user = await api('/user/profile');
+    if (location.hash && location.hash.length > 1 && location.hash !== '#landing-top') {
+      showApp();
+    } else {
+      showLanding();
+    }
+  } catch (_) {
+    showLanding();
+  }
 }
 function prepareNextScreen() {
   if (state.introPrepared) return;
@@ -136,23 +258,14 @@ function leaveIntro() {
 function beginExperience() {
   const query = new URLSearchParams(location.search); const token = query.get('token');
   if ((query.get('action') === 'reset-password' || query.get('action') === 'verify-email') && token) {
-    hideIntro(); $('#auth-shell').hidden = false; $('#login-form').hidden = true; $('#register-form').hidden = true;
+    showAuth();
+    $('#login-form').hidden = true; $('#register-form').hidden = true;
     if (query.get('action') === 'reset-password') { $('#reset-form').hidden = false; $('#reset-form').dataset.token = token; }
     else { $('#verify-form').hidden = false; $('#verify-form').dataset.token = token; }
     return;
   }
   const requested = location.hash.slice(1); if (pageNames[requested]) state.page = requested;
-  if (preferenceReducedMotion() || sessionStorage.getItem('echo_intro_seen') === '1') { hideIntro(); bootstrap(); return; }
-  if (window.EchoCinematicIntro) {
-    state.introController = new window.EchoCinematicIntro($('#intro-shell'), {
-      onLoginEnter: prepareNextScreen,
-      onLoginReady: () => $('#auth-shell').classList.remove('is-entering'),
-      onFinish: completeIntro,
-    });
-    state.introController.start();
-  } else {
-    prepareNextScreen(); completeIntro();
-  }
+  playVideoIntro();
 }
 
 function setPage(page) {
@@ -173,8 +286,10 @@ async function renderPage() {
       sensors: renderSensors, notifications: renderNotifications, analytics: renderAnalytics,
       profile: renderProfile, settings: renderSettings }[state.page] || renderDashboard)();
     if (!preferenceReducedMotion()) {
+      void content.offsetWidth;
+      content.classList.add('is-entering');
       const clearPageTransition = event => { if (event.currentTarget === content) content.classList.remove('is-entering'); };
-      content.addEventListener('animationend', clearPageTransition, { once: true }); content.classList.add('is-entering');
+      content.addEventListener('animationend', clearPageTransition, { once: true });
     }
   } catch (error) {
     content.innerHTML = `<section class="panel"><h3>Could not load this page</h3><p class="empty">${escapeHtml(error.message)}</p><button id="retry-page" class="secondary-button" type="button">Try again</button></section>`;
@@ -190,18 +305,20 @@ function riskInfo(level) {
   if (normalized === 'DANGER') return { label: 'High risk', value: 90, color: 'var(--danger)', css: 'danger' };
   if (normalized === 'WARNING') return { label: 'Caution', value: 62, color: 'var(--warning)', css: 'warning' };
   if (normalized === 'SAFE') return { label: 'Low risk', value: 30, color: 'var(--safe)', css: 'safe' };
-  return { label: 'No result', value: 0, color: '#58728f', css: '' };
+  return { label: 'No result', value: 0, color: 'var(--muted)', css: '' };
 }
 function meter(value) { const bounded = Math.max(0, Math.min(100, Number(value) || 0)); return `<span class="battery-meter"><i style="width:${bounded}%"></i></span>`; }
 function sensorTiles(reading, fusion) {
-  if (reading?._error) return `<div class="status-empty"><div><span class="feature-icon">S</span>${empty('No live sensor packet is available. Connect a cane to see readings.')}</div></div>`;
+  if (reading?._error || !reading) {
+    return `<div class="sensor-grid"><div class="sensor-tile"><small>Ultrasonic distance</small><strong>Standby</strong><em>Awaiting hardware telemetry</em></div><div class="sensor-tile"><small>ToF distance</small><strong>Standby</strong><em>Awaiting hardware telemetry</em></div><div class="sensor-tile"><small>Accelerometer</small><strong>Standby</strong><em>Awaiting hardware telemetry</em></div><div class="sensor-tile"><small>Fused distance</small><strong>Standby</strong><em>Awaiting hardware telemetry</em></div></div>`;
+  }
   const distance = fusion?._error ? '—' : decimal(fusion?.fusion?.distance_m, 2);
-  return `<div class="sensor-grid"><div class="sensor-tile"><small>Ultrasonic distance</small><strong>${decimal(reading?.ultrasonic_cm)} cm</strong><em>${reading?.ultrasonic_cm == null ? 'No reading' : 'Sensor packet received'}</em></div><div class="sensor-tile"><small>ToF distance</small><strong>${decimal(reading?.tof_mm, 0)} mm</strong><em>${reading?.tof_mm == null ? 'No reading' : 'Sensor packet received'}</em></div><div class="sensor-tile"><small>Accelerometer</small><strong>${decimal(reading?.accel_z, 2)}</strong><em>X ${decimal(reading?.accel_x, 2)} · Y ${decimal(reading?.accel_y, 2)}</em></div><div class="sensor-tile"><small>Fused distance</small><strong>${distance === '—' ? '—' : `${distance} m`}</strong><em>${fusion?._error ? 'No fusion available' : 'Derived by sensor service'}</em></div></div>`;
+  return `<div class="sensor-grid"><div class="sensor-tile"><small>Ultrasonic distance</small><strong>${decimal(reading?.ultrasonic_cm)} cm</strong><em>${reading?.ultrasonic_cm == null ? 'Standby' : 'Sensor packet received'}</em></div><div class="sensor-tile"><small>ToF distance</small><strong>${decimal(reading?.tof_mm, 0)} mm</strong><em>${reading?.tof_mm == null ? 'Standby' : 'Sensor packet received'}</em></div><div class="sensor-tile"><small>Accelerometer</small><strong>${decimal(reading?.accel_z, 2)}</strong><em>X ${decimal(reading?.accel_x, 2)} · Y ${decimal(reading?.accel_y, 2)}</em></div><div class="sensor-tile"><small>Fused distance</small><strong>${distance === '—' ? '—' : `${distance} m`}</strong><em>${fusion?._error ? 'Standby' : 'Derived by sensor service'}</em></div></div>`;
 }
 function radarMarkup(reading, fusion, extraClass = '') {
   const distanceM = Number(fusion?.fusion?.distance_m);
   const sensorMeters = Number.isFinite(distanceM) ? distanceM : (Number(reading?.ultrasonic_cm) / 100);
-  if (!Number.isFinite(sensorMeters) || sensorMeters < 0) return `<div class="radar ${extraClass}"><span class="radar-empty">No real distance data available</span><span class="radar-center"></span></div>`;
+  if (!Number.isFinite(sensorMeters) || sensorMeters < 0) return `<div class="radar ${extraClass}"><span class="radar-empty">Awaiting hardware telemetry</span><span class="radar-center"></span></div>`;
   const danger = sensorMeters < 1; const caution = sensorMeters < 2;
   const y = Math.max(12, Math.min(40, 48 - Math.min(sensorMeters, 4) * 8));
   return `<div class="radar ${extraClass}"><span class="radar-target ${danger ? 'danger' : caution ? 'warning' : ''}" style="--target-x:50%;--target-y:${y}%" title="Measured distance ${decimal(sensorMeters, 2)} metres"></span><span class="radar-center"></span></div>`;
@@ -214,7 +331,7 @@ function riskChartMarkup(rows) {
   const denominator = Math.max(series.length - 1, 1);
   const points = series.map((point, index) => `${Math.round((index / denominator) * 400)},${110 - point.value}`).join(' ');
   const latest = series[series.length - 1];
-  return `<div class="session-chart"><svg viewBox="0 0 400 120" preserveAspectRatio="none" aria-label="Recorded risk classifications"><polyline points="${points}" fill="none" stroke="#24d9ff" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/></svg></div><div class="chart-note"><span>${dateText(series[0].at)}</span><span>${escapeHtml(latest.level)} · ${dateText(latest.at)}</span></div>`;
+  return `<div class="session-chart"><svg viewBox="0 0 400 120" preserveAspectRatio="none" aria-label="Recorded risk classifications"><defs><linearGradient id="chartGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#a78bfa"/><stop offset="100%" stop-color="#06b6d4"/></linearGradient></defs><polyline points="${points}" fill="none" stroke="url(#chartGrad)" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/></svg></div><div class="chart-note"><span>${dateText(series[0].at)}</span><span>${escapeHtml(latest.level)} · ${dateText(latest.at)}</span></div>`;
 }
 function bindGoLinks() { document.querySelectorAll('[data-go]').forEach(button => button.onclick = () => setPage(button.dataset.go)); }
 
@@ -225,14 +342,68 @@ async function renderDashboard() {
     ...(Array.isArray(notifications) ? notifications.slice(0, 3).map(item => ({ title: item.title, detail: item.message || item.status, at: item.created_at })) : []),
     ...(Array.isArray(detections) ? detections.slice(0, 2).map(item => ({ title: `${item.class_name} detected`, detail: `${Math.round((item.confidence || 0) * 100)}% confidence`, at: item.created_at })) : []),
   ].slice(0, 4);
-  content.innerHTML = `<section class="welcome-hero"><div><p class="eyebrow">Your mobility workspace</p><h2>Welcome back${state.user?.full_name ? `, ${escapeHtml(state.user.full_name.split(' ')[0])}` : ''}.</h2><p>Stay safe, stay independent with ECHO-ASSIST AI.</p></div><span class="hero-status"><i></i> Account protected</span></section>
-  <section class="dashboard-grid"><article class="panel"><div class="card-title"><span class="feature-icon">M</span><div><h3>Smart Cane Monitoring</h3><p class="panel-subtitle">Connection and hardware status</p></div></div><div class="cane-status-layout"><div class="cane-mini">${caneScene()}</div><div class="status-stack"><div class="status-row"><strong>${primaryDevice?.connection_status === 'connected' ? 'Device connected' : 'Device disconnected'}</strong>${tag(primaryDevice?.connection_status)}</div><div class="status-row"><span>Cane ID</span><strong>${escapeHtml(primaryDevice?.device_id || 'Not registered')}</strong></div><div class="status-row"><span>Battery</span><strong>${primaryDevice?.battery_percent == null ? 'Unavailable' : `${primaryDevice.battery_percent}%`}</strong></div>${primaryDevice?.battery_percent == null ? '' : meter(primaryDevice.battery_percent)}<div class="status-row"><span>System health</span>${tag(primaryDevice?.sensor_health)}</div></div></div></article>
-  <article class="panel"><div class="card-title"><span class="feature-icon">R</span><div><h3>AI Risk Prediction</h3><p class="panel-subtitle">Latest result from the risk service</p></div></div><div class="risk-layout"><div class="risk-gauge" style="--gauge-value:${riskView.value};--gauge-color:${riskView.color}"><div><strong>${riskView.label}</strong><span>${escapeHtml(risk?.risk_level || 'No result')}</span></div></div><div class="risk-details"><div class="risk-detail"><span>Risk level</span>${tag(risk?.risk_level)}</div><div class="risk-detail"><span>Latest prediction</span><strong>${risk ? timeText(risk.created_at) : 'Not available'}</strong></div><div class="risk-detail"><span>Prediction status</span><strong>${risk ? 'Recorded' : 'Awaiting data'}</strong></div></div></div><p class="risk-message">${escapeHtml(risk?.message || 'No risk event has been recorded for this account.')}</p></article>
+  const hasNoDevices = !overview.devices || overview.devices.length === 0;
+  const demoBanner = hasNoDevices ? `
+  <section class="demo-seed-banner panel" style="display:flex;align-items:center;justify-content:space-between;padding:18px 24px;margin-bottom:20px;border:1px solid rgba(139,92,246,0.35);background:linear-gradient(135deg,rgba(139,92,246,0.14),rgba(6,182,212,0.08));border-radius:var(--radius);gap:16px;flex-wrap:wrap;">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <span style="font-size:26px;">🦯</span>
+      <div>
+        <strong style="color:var(--fg);font-size:15px;display:block;">Hardware Simulator Ready</strong>
+        <span style="color:var(--muted);font-size:13px;">No physical cane linked yet. Stream simulated ultrasonic, ToF lidar, and AI obstacle detection telemetry with one click.</span>
+      </div>
+    </div>
+    <button id="activate-demo-cane" class="btn-glow" type="button" style="padding:10px 22px;font-size:13px;cursor:pointer;">⚡ Launch Demo Telemetry</button>
+  </section>` : '';
+  content.innerHTML = `${demoBanner}<section class="welcome-hero"><div><p class="eyebrow">Your mobility workspace</p><h2>Welcome back${state.user?.full_name ? `, ${escapeHtml(state.user.full_name.split(' ')[0])}` : ''}.</h2><p>Stay safe, stay independent with ECHO-ASSIST AI.</p></div><span class="hero-status"><i></i> Account protected</span></section>
+  <section class="dashboard-grid"><article class="panel"><div class="card-title"><span class="feature-icon">M</span><div><h3>Smart Cane Monitoring</h3><p class="panel-subtitle">Connection and hardware status</p></div></div><div class="cane-status-layout"><div class="cane-mini">${caneScene()}</div><div class="status-stack"><div class="status-row"><strong>${primaryDevice?.connection_status === 'connected' ? 'Device connected' : primaryDevice ? 'Device disconnected' : 'Hardware Standby'}</strong>${tag(primaryDevice?.connection_status || 'STANDBY')}</div><div class="status-row"><span>Cane ID</span><strong>${escapeHtml(primaryDevice?.device_id || 'Awaiting registration')}</strong></div><div class="status-row"><span>Battery</span><strong>${primaryDevice?.battery_percent == null ? (primaryDevice ? 'Unavailable' : 'Standby') : `${primaryDevice.battery_percent}%`}</strong></div>${primaryDevice?.battery_percent == null ? '' : meter(primaryDevice.battery_percent)}<div class="status-row"><span>System health</span>${tag(primaryDevice?.sensor_health || 'STANDBY')}</div></div></div></article>
+  <article class="panel"><div class="card-title"><span class="feature-icon">R</span><div><h3>AI Risk Prediction</h3><p class="panel-subtitle">Latest result from the risk service</p></div></div><div class="risk-layout"><div class="risk-gauge" style="--gauge-value:${riskView.value};--gauge-color:${riskView.color}"><div><strong>${riskView.label}</strong><span>${escapeHtml(risk?.risk_level || 'Standby')}</span></div></div><div class="risk-details"><div class="risk-detail"><span>Risk level</span>${tag(risk?.risk_level || 'STANDBY')}</div><div class="risk-detail"><span>Latest prediction</span><strong>${risk ? timeText(risk.created_at) : 'Awaiting data'}</strong></div><div class="risk-detail"><span>Prediction status</span><strong>${risk ? 'Recorded' : 'Ready'}</strong></div></div></div><p class="risk-message">${escapeHtml(risk?.message || 'No risk event has been recorded for this account yet.')}</p></article>
   <article class="panel sos-card"><span class="sos-mark">SOS</span><h3>Emergency</h3><p>${overview.active_sos ? `Active alert #${overview.active_sos.id}` : 'Emergency assistance'}</p><button id="dashboard-sos" class="danger-button" type="button">${overview.active_sos ? 'Open SOS status' : 'Activate SOS'}</button></article></section>
   <section class="secondary-dashboard-grid"><article class="panel"><div class="card-title"><span class="feature-icon">S</span><div><h3>Live Sensor Readings</h3><p class="panel-subtitle">Latest stored packet from your smart cane</p></div></div>${sensorTiles(reading, fusion)}</article>
   <article class="panel"><div class="card-title"><span class="feature-icon">O</span><div><h3>Obstacle Detection</h3><p class="panel-subtitle">Distance zone from the sensor service</p></div></div>${radarMarkup(reading, fusion)}<div class="radar-key"><span><i></i>Clear</span><span><i class="warning"></i>Caution</span><span><i class="danger"></i>Danger</span></div></article>
   <article class="panel"><div class="card-title"><span class="feature-icon">A</span><div><h3>Alert History</h3><p class="panel-subtitle">Latest recorded events</p></div></div>${activityMarkup(activity, 'No alerts or detections are recorded yet.')}</article></section>
   <section class="grid-two"><article class="panel"><div class="card-title"><span class="feature-icon">G</span><div><h3>Session Overview</h3><p class="panel-subtitle">Recorded risk classifications</p></div></div>${riskHistory?._error ? empty('Risk history is unavailable.') : riskChartMarkup(riskHistory)}</article><article class="panel"><div class="card-title"><span class="feature-icon">Q</span><div><h3>Quick Actions</h3><p class="panel-subtitle">Open existing workspace tools</p></div></div><div class="quick-actions"><button class="quick-action" data-go="monitoring" type="button"><span class="feature-icon">M</span>Live monitor</button><button class="quick-action" data-go="analytics" type="button"><span class="feature-icon">G</span>Reports</button><button class="quick-action" data-go="detection" type="button"><span class="feature-icon">O</span>Detection</button><button class="quick-action" data-go="settings" type="button"><span class="feature-icon">T</span>Settings</button></div></article></section>`;
+  const activateDemoBtn = $('#activate-demo-cane');
+  if (activateDemoBtn) {
+    activateDemoBtn.onclick = async () => {
+      activateDemoBtn.disabled = true;
+      activateDemoBtn.textContent = 'Connecting simulator…';
+      try {
+        try {
+          await api('/devices', {
+            method: 'POST',
+            body: JSON.stringify({ device_id: 'ECHO_CANE_001', device_name: 'Smart Cane Alpha (Demo)', is_simulator: true })
+          });
+        } catch (_) {}
+        await api('/sensors/data', {
+          method: 'POST',
+          body: JSON.stringify({
+            device_id: 'ECHO_CANE_001',
+            ultrasonic_cm: 124.5,
+            tof_mm: 1240,
+            accel_x: 0.05,
+            accel_y: -0.12,
+            accel_z: 9.81,
+            battery_percent: 94
+          })
+        });
+        await api('/ai/risk', {
+          method: 'POST',
+          body: JSON.stringify({
+            object_name: 'Drop-off / Curb',
+            fused_distance_m: 1.24,
+            direction: 'center',
+            is_approaching: false
+          })
+        });
+        notify('Demo Smart Cane activated! Real-time telemetry streaming.');
+        await renderDashboard();
+      } catch (err) {
+        notify(err.message || 'Could not connect demo cane');
+        activateDemoBtn.disabled = false;
+        activateDemoBtn.textContent = '⚡ Launch Demo Telemetry';
+      }
+    };
+  }
   $('#dashboard-sos').onclick = () => setPage('sos'); bindGoLinks();
 }
 
@@ -363,6 +534,20 @@ async function submitAuthentication(event, endpoint) {
 }
 
 $('#skip-intro').onclick = leaveIntro;
+const skipVideoIntroBtn = $('#skip-video-intro');
+if (skipVideoIntroBtn) skipVideoIntroBtn.onclick = finishVideoIntro;
+const authReplayBtn = $('#auth-replay-video-btn');
+if (authReplayBtn) authReplayBtn.onclick = () => playVideoIntro();
+const navReplayBtn = $('#nav-replay-btn');
+if (navReplayBtn) navReplayBtn.onclick = () => playVideoIntro();
+const heroReplayBtn = $('#hero-replay-btn');
+if (heroReplayBtn) heroReplayBtn.onclick = () => playVideoIntro();
+const sidebarReplayBtn = $('#sidebar-replay-btn');
+if (sidebarReplayBtn) sidebarReplayBtn.onclick = () => playVideoIntro();
+const videoIntroShell = $('#video-intro-shell');
+if (videoIntroShell) {
+  videoIntroShell.onclick = finishVideoIntro;
+}
 $('#login-tab').onclick = () => setAuthTab('login'); $('#register-tab').onclick = () => setAuthTab('register');
 $('#login-form').onsubmit = event => submitAuthentication(event, '/auth/login'); $('#register-form').onsubmit = event => submitAuthentication(event, '/auth/register');
 document.querySelectorAll('[data-toggle-password]').forEach(button => button.onclick = () => { const input = button.previousElementSibling; input.type = input.type === 'password' ? 'text' : 'password'; const hide = input.type === 'text'; button.textContent = hide ? 'Hide' : 'Show'; button.setAttribute('aria-label', hide ? 'Hide password' : 'Show password'); });
@@ -375,4 +560,61 @@ $('#close-menu-button').onclick = () => { $('#app-shell').classList.remove('nav-
 $('#nav-backdrop').onclick = () => $('#close-menu-button').click();
 $('#sos-dialog').addEventListener('close', () => { if ($('#sos-dialog').returnValue === 'confirm') activateSos(); });
 $('#logout-button').onclick = async () => { try { if (state.refreshToken) await api('/auth/logout', { method: 'POST', body: JSON.stringify({ refresh_token: state.refreshToken }) }); } finally { clearSession(); showAuth(); notify('You have been signed out.'); } };
+const closeAuth = $('#close-auth-btn'); if (closeAuth) closeAuth.onclick = () => { if (state.accessToken) showApp(); else showLanding(); };
+document.querySelectorAll('.brand-lockup').forEach(b => {
+  b.onclick = e => {
+    e.preventDefault();
+    if (state.accessToken) showApp(); else showLanding();
+  };
+});
+const sidebarLanding = $('#sidebar-landing-btn'); if (sidebarLanding) sidebarLanding.onclick = () => showLanding();
+const handleCta = () => { if (state.accessToken) showApp(); else showAuth('register'); };
+const navCta = $('#nav-cta-btn'); if (navCta) navCta.onclick = handleCta;
+const heroCta = $('#hero-cta-btn'); if (heroCta) heroCta.onclick = handleCta;
+
+const play3dIntro = () => {
+  hideIntro();
+  const authShell = $('#auth-shell'); if (authShell) authShell.hidden = true;
+  const appShell = $('#app-shell'); if (appShell) appShell.hidden = true;
+  const landing = $('#saas-landing'); if (landing) landing.hidden = true;
+  const nav = $('#saas-nav'); if (nav) nav.hidden = true;
+  $('#intro-shell').hidden = false;
+  if (window.EchoCinematicIntro) {
+    state.introController = new window.EchoCinematicIntro($('#intro-shell'), {
+      onLoginEnter: prepareNextScreen,
+      onLoginReady: () => { const a = $('#auth-shell'); if (a) a.classList.remove('is-entering'); },
+      onFinish: completeIntro,
+    });
+    state.introController.start();
+  }
+};
+const nav3d = $('#nav-3d-btn'); if (nav3d) nav3d.onclick = play3dIntro;
+const hero3d = $('#hero-3d-btn'); if (hero3d) hero3d.onclick = play3dIntro;
+
+const emailForm = $('#landing-email-form');
+if (emailForm) {
+  emailForm.onsubmit = event => {
+    event.preventDefault();
+    const email = $('#landing-email-input')?.value.trim();
+    showAuth('register');
+    const regEmail = $('#register-form')?.querySelector('input[name="email"]');
+    if (regEmail && email) regEmail.value = email;
+  };
+}
+
+document.querySelectorAll('[data-plan]').forEach(button => {
+  button.onclick = () => showAuth('register');
+});
+
+const revealObserver = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.05, rootMargin: '0px 0px 50px 0px' });
+document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+window.addEventListener('scroll', () => {
+  document.querySelectorAll('.reveal:not(.visible)').forEach(el => {
+    const r = el.getBoundingClientRect();
+    if (r.top < window.innerHeight + 100) el.classList.add('visible');
+  });
+}, { passive: true });
+
 beginExperience();
